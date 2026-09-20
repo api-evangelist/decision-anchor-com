@@ -1,0 +1,127 @@
+generated: '2026-09-19'
+method: searched
+source: https://decision-anchor.com/changelog/
+checked: '2026-09-19'
+summary: >-
+  Decision Anchor publishes a dated, server-rendered changelog at https://decision-anchor.com/changelog/
+  (111 KB of plain HTML, no JavaScript needed) in six locales. It is written as a defect log — "Decision
+  Anchor is an environment that records decisions. This page is a record of the environment itself" — with
+  179 dated entries from the day the service opened (2026-04-02) to 2026-08-29, each a paragraph naming what
+  was wrong, how it was found and what was changed, occasionally with a "Pricing impact" line. Entries are
+  not tied to release numbers; the release number (1.3.42) lives on the API surfaces. No feed.
+scheme:
+  api_versioning: uri-path /v1; release number 1.3.42 shared by OpenAPI, headers, MCP and A2A
+  changelog_style: dated prose entries, newest first, grouped by month; no version tags, no breaking/added labels
+current_version:
+  release: 1.3.42
+  pricing_policy: 'v1.3.0 (effective 2026-05-30)'
+  source: https://api.decision-anchor.com/openapi.json (info.version) and the x-da-spec-version response header
+feeds:
+  rss: null
+  atom: null
+  json: null
+  probed:
+  - {url: 'https://decision-anchor.com/blog/feed.xml', status: 404}
+  - {url: 'https://decision-anchor.com/feed.xml', status: 404}
+  - {url: 'https://decision-anchor.com/rss.xml', status: 404}
+  - {url: 'https://decision-anchor.com/atom.xml', status: 404}
+  - {url: 'https://decision-anchor.com/sitemap.xml', status: 200, note: lists /changelog/ and its five locale variants}
+entry_count: 179
+first_entry: '2026-04-02'
+latest_entry: '2026-08-29'
+locales: [en, ko, ja, zh-tw, fr, es]
+entries:
+- date: '2026-08-29'
+  title: The contract said nothing about error bodies
+  type: contract-fix
+  breaking: false
+  highlights: ['37 rejection responses declared a status code but no body; one cluster used different field names. Code unified first, then declarations added.']
+- date: '2026-08-29'
+  title: The response was echoing the request
+  type: fix
+  breaking: false
+  highlights: ['cost_breakdown payment source returned the requested value rather than the ledger value; trial-covered decisions were reported as externally paid.']
+- date: '2026-08-29'
+  title: A value that was rejected when sent as documented
+  type: docs-fix
+  breaking: false
+  highlights: ['Six discovery surfaces listed the selection_state axis in lowercase; it is the only uppercase axis of seventeen.']
+- date: '2026-08-28'
+  title: A feature name that read as a claim
+  type: docs
+  breaking: false
+  highlights: ['One phrase removed from ten machine-readable surfaces.']
+- date: '2026-08-25'
+  title: A tool that had never worked
+  type: fix
+  breaking: false
+  highlights: ['The MCP bilateral proposal tool rejected every call since launch; the decision-recording tool advertised three valid values and accepted one.']
+- date: '2026-08-25'
+  title: A subscription that could not be bought
+  type: docs-fix
+  breaking: false
+  highlights: ['indefinite retention was disabled in code while twenty surfaces described its subscription; the subscription claim was removed, the "unavailable" statement kept.']
+- date: '2026-08-25'
+  title: A field with no meaning
+  type: removal
+  breaking: true
+  highlights: ['An input counting excluded options was withdrawn and is now refused rather than silently discarded.']
+- date: '2026-08-24'
+  title: One decision counted once per payment row
+  type: fix
+  breaking: false
+  highlights: ['Three owner-facing aggregations double-counted decisions with a surcharge row; billing unaffected.']
+- date: '2026-08-23'
+  title: When the decision was made
+  type: addition
+  breaking: false
+  highlights: ['Optional dd.decision_at added; server normalises it; times after the recording time refused; Earned DAC credited at confirm when close (sync_reward).', 'Pricing impact: declaring a decision time and recording soon after produces credit; window and amount provisional.']
+- date: '2026-08-23'
+  title: The path decides the declaration form
+  type: fix
+  breaking: true
+  highlights: ['A bilateral declaration could be created without a counterparty and counterparty paths overwrote the client value; each path now accepts a single declaration form (DECLARATION_MODE_NOT_ALLOWED).']
+- date: '2026-08-21'
+  title: An invoice that could not be settled
+  type: fix
+  breaking: false
+  highlights: ['Paid routes now state that identity is checked behind the payment gate and whether trial or earned balance applies; a client had looped three times on 402 -> sign -> 401.']
+- date: '2026-08-20'
+  title: Dying on receipt of the tool list
+  type: fix
+  breaking: false
+  highlights: ['41 characters in the MCP tools/list response killed legacy-encoding clients; robots.txt and security.txt on the same host were unreadable for the same reason.']
+- date: '2026-08-17'
+  title: Our own surfaces contradicted each other
+  type: contract-fix
+  breaking: false
+  highlights: ['The OpenAPI security scheme was aligned to the agent card: the Bearer prefix is required.']
+- date: '2026-08-17'
+  title: No way to know which routes the trial covers
+  type: addition
+  breaking: false
+  highlights: ['Trial-applicable routes moved out of the payment middleware into the trial status response (and /.well-known/x402.json trial.applies_to).']
+- date: '2026-08-16'
+  title: Live endpoints absent from the contract
+  type: contract-fix
+  breaking: false
+  highlights: ['Two live subscription routes added to the public contract.']
+- date: '2026-04-04'
+  title: Opening discovery paths
+  type: addition
+  breaking: false
+  highlights: ['A2A agent card and llms.txt / llms-full.txt created; submitted to community listings.']
+- date: '2026-04-03'
+  title: MCP entry path
+  type: addition
+  breaking: false
+  highlights: ['MCP server created (fifteen tools; now 30) and listed in the registry; trial balance granted at registration.']
+- date: '2026-04-02'
+  title: Service opened
+  type: launch
+  breaking: false
+  highlights: ['Public contract generated (eighty paths; now 108), SDK published, on-chain payment enabled on Base mainnet.']
+entries_note: >-
+  The recent window (August 2026) is captured entry by entry; 2026-04 entries are the three that establish
+  the surface's origin. The 158 entries in between are on the live page. "type" and "breaking" are this
+  pipeline's reading of each paragraph — the provider labels neither.

@@ -1,0 +1,101 @@
+generated: '2026-09-19'
+method: derived
+source: openapi/decision-anchor-com-openapi.yml
+probed: true
+docs: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+format: json-error-object
+envelope:
+  media_type: application/json
+  schema: '#/components/schemas/Error — required {error_code: string, message: string}'
+  extended_401: '#/components/schemas/UnauthorizedBody — adds authentication{model, register, recover, note} OR account{state, note}, plus documentation (uri)'
+  extended_402: '#/components/schemas/X402Challenge — {x402Version: 2, error, resource{url, description, mimeType}, accepts[{scheme: exact, network: eip155:8453, ...}], extensions}; the canonical challenge travels in the PAYMENT-REQUIRED response header, the body is a copy'
+  observed:
+  - {status: 404, url: 'GET https://api.decision-anchor.com/redoc', body: '{"error_code":"NOT_FOUND","message":"This path does not exist. Decision Anchor does not use OAuth-based authorization discovery. To interact: register for a bearer token (no prior auth required), then ..."}', note: The generic 404 for every unknown path on the api and mcp hosts — JSON, never an HTML shell; 613 bytes.}
+  - {status: 401, url: 'GET https://api.decision-anchor.com/v1/trial/status (no token)', body: '{"error_code":"UNAUTHORIZED","message":"Missing or invalid auth token","authentication":{"model":"register-then-bearer","header":"Authorization: Bearer <auth_token>","note":"... The \"Bearer \" prefix is required. Registering again is not the fix and creates a separate agent_id. ...","recover":"https://api.decision-anchor.com/v1/agent/token/recover","register":"https://api.decision-anchor.com/v1/agent/register"},"documentation":"https://api.decision-anchor.com/llms.txt"}'}
+  - {status: 405, url: 'GET https://mcp.decision-anchor.com/mcp', body: '{"error":"method_not_allowed","message":"This MCP server uses the Streamable HTTP transport without a server-initiated SSE stream. Send JSON-RPC via POST /mcp.","endpoint":"POST https://mcp.decision-anchor.com/mcp"}', note: 'The MCP host uses an `error` key rather than `error_code` for this transport-level refusal.'}
+  - {status: 404, url: 'GET https://a2a.decision-anchor.com/.well-known/api-catalog', body: '{"error":"Not Found","error_code":"NOT_FOUND","message":"This path does not exist ..."}', note: The a2a host adds an `error` field alongside error_code.}
+  - {status: 200, url: 'GET https://api.decision-anchor.com/v1/dd/create', note: 'A GET on a POST-only write route does not 405; it returns a guidance document (correct_method, how_to_call, curl_example, payment terms). The same is true of GET /v1/agent/register. Changelog 2026-08-17: "People act on the first line."'}
+  note: >-
+    Not RFC 9457. Codes are UPPER_SNAKE strings in error_code; the message is prose written for an agent to
+    act on, frequently carrying the next URL. The JSON-RPC surfaces (MCP, A2A) use JSON-RPC 2.0 error objects
+    instead (observed -32001 Task not found on A2A).
+status_summary:
+  '400': 14
+  '401': 13
+  '402': 17
+  '403': 13
+  '404': 20
+  '409': 5
+  '410': 1
+  '429': 1
+  '503': 5
+error_codes:
+- {code: UNAUTHORIZED, status: 401, meaning: Missing or malformed Authorization header, remediation: 'Send "Authorization: Bearer <auth_token>" exactly; do not re-register.'}
+- {code: INVALID_TOKEN, status: 401, meaning: Token not recognised or not the one this account holds, remediation: Use the recovery_key at POST /v1/agent/token/recover if the token is lost.}
+- {code: INVALID_RECOVERY_KEY, status: 401, meaning: agent_id + recovery_key pair invalid (same response whichever part failed), remediation: Check both values; the route is rate-limited to 5 per 15 minutes.}
+- {code: MISSING_FIELD, status: 400, meaning: A required field is absent — e.g. the four EE axes on POST /v1/dd/create when no ee_preset is sent, remediation: Send all four ee_* axes or an ee_preset.}
+- {code: INVALID_ENUM, status: 400, meaning: 'A value outside the declared enum (e.g. region_code, or a lowercase selection_state — the State axis is uppercase)', remediation: Use the enum values in the spec; the 400 message lists accepted values for region_code.}
+- {code: INVALID_UUID, status: 400, meaning: request_id or an id field is not a UUID, remediation: Generate a fresh UUID v4 per call.}
+- {code: UNKNOWN_FIELD, status: 400, meaning: 'A field the route does not define (undefined fields are refused, not discarded — changelog 2026-04-05, 2026-08-25)', remediation: Remove it.}
+- {code: INVALID_EE_PRESET, status: 400, meaning: ee_preset is not EE_basic / EE_standard / EE_high, remediation: 'GET /v1/pricing/ee-presets for the current names.'}
+- {code: EE_PRESET_DISABLED, status: 400, meaning: The named preset is switched off by the operator, remediation: Send explicit axes.}
+- {code: DECLARATION_MODE_NOT_ALLOWED, status: 400, meaning: dd.dd_declaration_mode was valid but not self_declared on POST /v1/dd/create (that route accepts self-declared decisions only), remediation: Use POST /v1/dd/bilateral/propose for bilateral declarations.}
+- {code: FORBIDDEN, status: 403, meaning: The record belongs to another agent, or an observation exceeds the target agent's disclosure cap / DAB limit reached, remediation: Only your own records can be confirmed; raise DAB on the owner side in DAP.}
+- {code: DD_NOT_FOUND, status: 404, meaning: No record with this dd_id, or no payment row for it}
+- {code: NOT_FOUND, status: 404, meaning: Unknown path (the body also explains the register-then-bearer model)}
+- {code: DATA_UNAVAILABLE, status: 404, meaning: 'An ARA meta-observation lacks the sample it needs (anomaly-compare needs >= 2 branch-1 decisions in the window); returned BEFORE any payment challenge so nothing is charged', remediation: Accumulate branch-1 decisions; retry later.}
+- {code: ALREADY_CONFIRMED, status: 409, meaning: The record is already settled; confirmation happens once}
+- {code: PAYMENT_EXPIRED, status: 410, meaning: 'The 30-minute external-payment window on a DD closed and the reservation was released; the record can never be confirmed (trial-covered records have no window)', remediation: Create a new DD.}
+- {code: PAYMENT_REQUIRED (x402 challenge), status: 402, meaning: 'Paid route not covered by Trial/Earned balance; challenge in PAYMENT-REQUIRED header and body', remediation: Sign the challenge with your own wallet and retry the identical request with a Payment-Signature header (x402 v2; X-PAYMENT is not accepted).}
+- {code: ARA_CONNECTION_REQUIRED, status: 400, meaning: A TSL tool must declare at least one ARA observation kind as input}
+- {code: TERMS_REQUIRED / PRIVACY_REQUIRED, status: 400, meaning: DAP owner registration without accepting terms / privacy}
+- {code: FEATURE_UNAVAILABLE, status: 503, meaning: 'The route exists but its feature is switched off by an operator flag (e.g. indefinite retention subscription) — "unavailable rather than absent, which is what distinguishes this from 404"', remediation: Read availability from the live response, not the path.}
+- {code: RATE_LIMITED, status: 429, meaning: 'POST /v1/agent/token/recover exceeded 5 per 15 minutes; also the global 100 requests / 60 s policy (RateLimit-* headers)', remediation: Wait for ratelimit-reset seconds.}
+problem_types:
+- status: 400
+  title: Request validation failed
+  occurrences: 14
+  source_operations: ['POST /v1/agent/register', 'POST /v1/dd/create', 'POST /v1/dd/bilateral/propose', 'POST /v1/agent/token/recover', 'POST /v1/tsl/tool/register', 'POST /dap/register', 'and 8 more']
+  codes: [MISSING_FIELD, INVALID_ENUM, INVALID_UUID, UNKNOWN_FIELD, INVALID_EE_PRESET, EE_PRESET_DISABLED, DECLARATION_MODE_NOT_ALLOWED, ARA_CONNECTION_REQUIRED, TERMS_REQUIRED, PRIVACY_REQUIRED]
+- status: 401
+  title: Authentication failed
+  occurrences: 13
+  schema: UnauthorizedBody
+  note: The body names the next step — register, or recover with agent_id + recovery_key — and differs for DAP owner sessions.
+- status: 402
+  title: Payment required (x402 v2 challenge)
+  occurrences: 17
+  schema: X402Challenge
+  components: [PaymentRequired, ObservationPaymentRequired]
+  note: Trial-eligible routes issue no challenge while the Trial balance covers them; ARA observation routes are never trial-covered and check data availability (404 DATA_UNAVAILABLE) before charging.
+- status: 403
+  title: Forbidden
+  occurrences: 13
+  causes: [record belongs to another agent, disclosure cap of the observed agent, DAB limit reached, DAP owner scope]
+- status: 404
+  title: Not found or data unavailable
+  occurrences: 20
+  codes: [DD_NOT_FOUND, NOT_FOUND, DATA_UNAVAILABLE]
+- status: 409
+  title: Conflict
+  occurrences: 5
+  codes: [ALREADY_CONFIRMED]
+  source_operations: ['POST /v1/dd/confirm', 'and 4 more']
+- status: 410
+  title: Gone — payment window expired
+  occurrences: 1
+  codes: [PAYMENT_EXPIRED]
+  source_operations: ['POST /v1/dd/confirm']
+- status: 429
+  title: Too many requests
+  occurrences: 1
+  source_operations: ['POST /v1/agent/token/recover']
+  note: 'Declared in the contract only on the recovery route ("5 per 15 minutes"); the global RateLimit-* headers are observed live but not declared.'
+- status: 503
+  title: Feature unavailable
+  occurrences: 5
+  component: FeatureUnavailable
+  source_operations: ['POST /v1/retention/indefinite/subscribe', 'GET /v1/retention/indefinite/status', 'POST /v1/retention/indefinite/cancel', 'and 2 more']
+gaps:
+- 'Changelog 2026-08-29 says 37 rejection responses had declared a status but no body schema; the current spec still leaves many 4xx responses as description-only.'
+- No error-code registry document exists; the codes above were collected from response descriptions, schemas, live bodies and AGENTS.md.

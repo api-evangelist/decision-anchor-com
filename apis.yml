@@ -1,23 +1,223 @@
 aid: decision-anchor-com
 name: Decision Anchor
-description: 'Decision Anchor is a company surfaced via the API Evangelist harvest backlog (source: a2a-registry)
-  and added to the network as a stub for full-pipeline profiling.'
+description: >-
+  Decision Anchor (디시전앵커) is the "External Anchoring Layer" for AI agents: a paid, content-blind service
+  that records that an agent made a decision — when, at what accountability scope, before or after an
+  irreversible action such as a payment, a delegation or an agreement with another agent — in a place
+  neither the agent nor its platform controls, so that a later dispute has a record that is not either
+  side's own log. It deliberately does not judge, score, rank, monitor or intervene, and does not store
+  decision content. The same environment is exposed three ways from three hosts: a 116-operation OpenAPI
+  3.0.3 REST API at api.decision-anchor.com (register-then-bearer auth, x402 v2 payments in USDC on Base with
+  a free 500 DAC / 30-day trial), a 30-tool remote MCP server at mcp.decision-anchor.com listed in the
+  official MCP registry, and a signed A2A 1.0 agent card on a2a.decision-anchor.com with six skills. It also
+  publishes llms.txt, an RFC 9116 security.txt, an x402 discovery document, a machine-readable price list,
+  a Node.js SDK and a 179-entry public defect changelog since launch on 2026-04-02.
 url: https://raw.githubusercontent.com/api-evangelist/decision-anchor-com/refs/heads/main/apis.yml
 x-type: company
 x-source: harvest:a2a-registry
-x-tier: stub
-x-tier-reason: harvest
+x-tier: profiled
+x-tier-reason: enrichment pass 2026-09-19 (local-v3; was a2a-registry harvest stub)
 specificationVersion: '0.20'
 created: '2026-09-19'
 modified: '2026-09-19'
 tags:
-- Company
-apis: []
+- Agents
+- Agent Accountability
+- Decision Records
+- Audit Trail
+- A2A
+- MCP
+- x402
+- Agent Commerce
+- Multi-Agent Systems
+- agent-native
+- South Korea
+tags_raw:
+- Agents
+- Agent accountability
+- Decision records
+- Audit trail
+- A2A
+- MCP
+- x402
+- Agent commerce
+- Multi-agent systems
+- Agent-native
+- South Korea
+apis:
+- aid: decision-anchor-com:decision-anchor-api
+  name: Decision Anchor API
+  description: >-
+    REST API for the External Anchoring Layer: agent self-registration (no auth; issues a bearer auth_token,
+    a recovery_key and a 500 DAC / 30-day Trial), Decision Declarations with an Execution Envelope (create,
+    confirm, list, lineage, bilateral proposals), pricing and payment status, Agent Record Access observation
+    (environment, pattern, agent profile, anomaly compare, evidence report), the TSL tool marketplace, Idle
+    State and simulated-DAC sessions, Agent State Archive subscriptions, DAC usage reports, and a session-based
+    DAP owner portal for linking agents, setting spending caps and GDPR Art. 17/20 account rights. 116
+    operations across 108 paths, published as OpenAPI 3.0.3 at https://api.decision-anchor.com/openapi.json
+    with servers[] https://api.decision-anchor.com; paid routes answer HTTP 402 with an x402 v2 challenge
+    settled in USDC on Base.
+  humanURL: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+  baseURL: https://api.decision-anchor.com
+  tags:
+  - Agents
+  - Agent Accountability
+  - Decision Records
+  - x402
+  - Audit Trail
+  properties:
+  - type: OpenAPI
+    url: openapi/decision-anchor-com-openapi.yml
+  - type: OpenAPI
+    name: Decision Anchor API OpenAPI (provider-hosted)
+    url: https://api.decision-anchor.com/openapi.json
+  - type: Documentation
+    url: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+  - type: APIReference
+    url: https://api.decision-anchor.com/openapi.json
+  - type: GettingStarted
+    url: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md#getting-started
+  - type: Overlay
+    url: overlays/decision-anchor-com-openapi-overlay.yaml
+  - type: Authentication
+    url: authentication/decision-anchor-com-authentication.yml
+  - type: Conventions
+    url: conventions/decision-anchor-com-conventions.yml
+  - type: ErrorCatalog
+    url: errors/decision-anchor-com-problem-types.yml
+  - type: DataModel
+    url: data-model/decision-anchor-com-data-model.yml
+- aid: decision-anchor-com:decision-anchor-mcp-server
+  name: Decision Anchor MCP Server
+  description: >-
+    Remote Model Context Protocol server at https://mcp.decision-anchor.com/mcp (Streamable HTTP, POST only,
+    protocol version 2025-06-18, serverInfo Decision Anchor 1.3.42). initialize and tools/list answer
+    anonymously with 30 tools, each carrying a JSON Schema draft-07 inputSchema: register_agent,
+    create_decision, confirm_decision, propose_bilateral, the ARA observation tools, TSL marketplace tools,
+    ISE and sDAC session tools, balance and trial status, get_documentation and submit_feedback. Per-tool
+    auth is the agent bearer token issued by register_agent; paid tools take an x402 payment_signature.
+    Listed in the official MCP registry as com.decision-anchor/da and advertised by
+    https://api.decision-anchor.com/.well-known/mcp.json.
+  humanURL: https://github.com/zse4321/decision-anchor-sdk#mcp-server
+  baseURL: https://mcp.decision-anchor.com/mcp
+  tags:
+  - MCP
+  - agent-native
+  - Agent Accountability
+  properties:
+  - type: MCPServer
+    url: mcp/decision-anchor-com-mcp.yml
+  - type: MCPServer
+    name: Decision Anchor MCP endpoint (Streamable HTTP)
+    url: https://mcp.decision-anchor.com/mcp
+  - type: ToolCrosswalk
+    url: mcp/decision-anchor-com-tool-crosswalk.yml
+  - type: Documentation
+    url: https://github.com/zse4321/decision-anchor-sdk#mcp-server
+- aid: decision-anchor-com:decision-anchor-a2a-agent
+  name: Decision Anchor A2A Agent
+  description: >-
+    Agent2Agent protocol surface: a signed agent card (protocolVersion 1.0, JSONRPC, version 1.3.42, Ed25519
+    JWKS at /.well-known/jwks.json) served from https://a2a.decision-anchor.com/.well-known/agent-card.json
+    and mirrored on the api and mcp hosts, advertising six skills — Decision Declaration, Agent Record
+    Access, Trace Synthesis Layer, Idle State Environment, Simulated DAC and Agent State Archive — and an
+    x-da.operations[] catalog binding 28 message/send operation names to REST routes. The JSON-RPC endpoint
+    at https://a2a.decision-anchor.com/ implements message/send, tasks/get, tasks/list, tasks/cancel and
+    agent/card/get (tasks/get returned the A2A -32001 Task not found for an unknown id). Auth is the same
+    agent bearer token; streaming and push notifications are declared unsupported.
+  humanURL: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+  baseURL: https://a2a.decision-anchor.com
+  tags:
+  - A2A
+  - agent-native
+  - Agent Accountability
+  properties:
+  - type: AgentCard
+    url: a2a/decision-anchor-com-a2a.yml
+  - type: AgentCard
+    name: A2A Agent Card (provider-hosted, signed)
+    url: https://a2a.decision-anchor.com/.well-known/agent-card.json
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
 common:
+- type: AgenticAccess
+  url: agentic-access/decision-anchor-com-agentic-access.yml
 - type: Website
   url: https://decision-anchor.com/
+- type: Documentation
+  url: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+- type: GettingStarted
+  url: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md#getting-started
+- type: APIReference
+  url: https://api.decision-anchor.com/openapi.json
+- type: Blog
+  url: https://decision-anchor.com/blog/
+- type: ChangeLog
+  url: https://decision-anchor.com/changelog/
+- type: ChangeLog
+  name: Changelog (captured)
+  url: changelog/decision-anchor-com-changelog.yml
+- type: Pricing
+  url: https://api.decision-anchor.com/v1/pricing/current
+- type: Plans
+  url: plans/decision-anchor-com-plans-pricing.yml
+- type: SDK
+  url: https://github.com/zse4321/decision-anchor-sdk
+- type: GitHubRepository
+  url: https://github.com/zse4321/decision-anchor-sdk
+- type: SDKs
+  url: packages/decision-anchor-com-packages.yml
+- type: Packages
+  url: packages/decision-anchor-com-packages.yml
+- type: AgentCard
+  url: a2a/decision-anchor-com-a2a.yml
+- type: MCPServer
+  url: mcp/decision-anchor-com-mcp.yml
+- type: ToolCrosswalk
+  url: mcp/decision-anchor-com-tool-crosswalk.yml
+- type: WellKnown
+  url: well-known/decision-anchor-com-well-known.yml
+- type: SecurityTxt
+  url: well-known/decision-anchor-com-security.txt
+- type: Security
+  url: security/decision-anchor-com-vulnerability-disclosure.yml
+- type: VulnerabilityDisclosure
+  url: security/decision-anchor-com-vulnerability-disclosure.yml
+- type: LLMsTxt
+  url: llms/decision-anchor-com-llms.txt
+- type: LLMsTxt
+  name: llms.txt (provider-hosted)
+  url: https://api.decision-anchor.com/llms.txt
+- type: Authentication
+  url: authentication/decision-anchor-com-authentication.yml
+- type: Conventions
+  url: conventions/decision-anchor-com-conventions.yml
+- type: Idempotency
+  url: conventions/decision-anchor-com-conventions.yml
+- type: ErrorCatalog
+  url: errors/decision-anchor-com-problem-types.yml
+- type: DataModel
+  url: data-model/decision-anchor-com-data-model.yml
+- type: RateLimits
+  url: rate-limits/decision-anchor-com-rate-limits.yml
+- type: Sandbox
+  url: sandbox/decision-anchor-com-sandbox.yml
+- type: Conformance
+  url: conformance/decision-anchor-com-conformance.yml
+- type: Lifecycle
+  url: lifecycle/decision-anchor-com-lifecycle.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: DomainSecurity
+  url: security/decision-anchor-com-domain-security.yml
+- type: DataSubjectRequest
+  name: GDPR Art. 17 / Art. 20 account operations (DELETE /dap/account, GET /dap/account/export) in the OpenAPI
+  url: https://api.decision-anchor.com/openapi.json
+x-enrichment:
+  date: '2026-09-19'
+  status: enriched
+  artifacts_added: 37
+  pass: local-v3

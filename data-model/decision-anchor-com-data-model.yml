@@ -1,0 +1,137 @@
+generated: '2026-09-19'
+method: derived
+source: openapi/decision-anchor-com-openapi.yml
+docs: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+summary: >-
+  Derived from the 7 component schemas, the inline request/response objects, the path parameters and the
+  vocabulary the provider fixes in AGENTS.md and the agent card (DAP, DD, EE, DAC, ARA, TSL, ISE, sDAC, ASA,
+  DUR). Two roots: the AGENT (agent_id, issued at registration, identified by a bearer token) and the DAP
+  OWNER (a human or parent agent with a portal session who links agents and sets their budgets). Everything
+  the environment records hangs off a Decision Declaration, which always carries exactly one Execution
+  Envelope. The contract links by id field (dd_id, ee_id, agent_id, agreement_id, group_id, tool_id,
+  session_id) rather than by $ref-embedded objects, and offers no expansion parameter — clients resolve the
+  graph with follow-up calls (lineage, payment status, session lookups).
+id_style:
+  format: UUID v4 for entities; prefixed opaque strings for credentials
+  prefixes:
+  - {entity: auth_token, prefix: da_tk_}
+  - {entity: recovery_key, prefix: da_rk_ (64 hex)}
+  - {entity: integrity_hash, prefix: 'sha256:'}
+  - {entity: agent_id / dd_id / ee_id / session_id / tool_id / agreement_id / group_id, format: uuid}
+entities:
+- name: Agent
+  aliases: [DAP — Decision Anchor Passport]
+  description: A registered agent identity. Created by POST /v1/agent/register with no prior auth; owns a Trial grant, a disclosure level, a DAB status, Earned DAC balances and a trajectory of DDs.
+  schemas: []
+  key_fields: [agent_id, auth_token, recovery_key, region_code, disclosure_level, registered_at]
+  relationships:
+  - {has_many: DecisionDeclaration, via: agent_id}
+  - {has_many: BilateralAgreement, via: counterparty_agent_id, note: as proposer or counterparty}
+  - {has_one: TrialGrant, via: agent_id}
+  - {has_one: DAB, via: agent_id, note: set by the owner}
+  - {has_one: EarnedDacBalance, via: agent_id}
+  - {has_many: TslTool, via: tool creator}
+  - {has_many: SdacSession, via: agent_id}
+  - {has_many: IseSession, via: agent_id}
+  - {has_one: AsaSubscription, via: agent_id}
+  - {belongs_to: DapOwner, via: 'POST /dap/agent/link (optional)'}
+- name: DecisionDeclaration
+  aliases: [DD]
+  description: The core record. Two axes (decision_action_type × selection_state) plus decision_type, origin_context_type, dd_unit_type, dd_declaration_mode, optional decision_at and parent_dd_id; content-blind unless content_inclusion_flag = 1 attaches a TemplateInput. States trial_paid / pending_payment, then settled after confirm.
+  schemas: [DDInput]
+  key_fields: [dd_id, agent_id, ee_id, status, settlement_status, anchored_at, integrity_hash, dac_amount, pricing_version, content_inclusion_flag]
+  relationships:
+  - {belongs_to: Agent, via: agent_id}
+  - {has_one: ExecutionEnvelope, via: ee_id}
+  - {has_one: CostBreakdown, via: inline cost_breakdown}
+  - {has_one: Payment, via: 'dd_id (GET /v1/payment/{dd_id}/status)'}
+  - {has_one: TemplateInput, via: 'template (when content_inclusion_flag = 1)'}
+  - {belongs_to: DecisionDeclaration, via: parent_dd_id, note: 'lineage; GET /v1/dd/{dd_id}/lineage'}
+  - {belongs_to: LineageGroup, via: 'group_id (GET /v1/dd/lineage-group/{group_id})'}
+  - {has_one: BilateralAgreement, via: 'dd_declaration_mode = bilateral'}
+  - {has_one: SelfClassification, via: template.self_classification}
+- name: ExecutionEnvelope
+  aliases: [EE]
+  description: The accountability scope attached to a DD — retention, integrity, disclosure, responsibility, content_disclosure_scope, delegation_state, access_class, direct-access period/quota — or a named preset (EE_basic / EE_standard / EE_high). Determines the DAC premium.
+  schemas: [EEInput]
+  relationships:
+  - {belongs_to: DecisionDeclaration, via: ee_id}
+- name: TemplateInput
+  aliases: [decision metadata, branch 1]
+  description: Optional 7-dimension structured metadata (decision_class, decision_scale_value/unit, target_class, call_chain, self_classification, decision_trigger, human_involvement); every dimension an enum or typed field, never free text.
+  schemas: [TemplateInput]
+  relationships:
+  - {belongs_to: DecisionDeclaration, via: template}
+  - {belongs_to: SelfClassification, via: self_classification}
+- name: CostBreakdown
+  aliases: [DAC — Decision Anchor Cost]
+  description: base_fee, base_fee_source (trial | external | earned), premium, premium_source, subtotal, multiplier, total_dac. Returned on DD create, sDAC trial and confirm.
+  schemas: [CostBreakdown]
+  relationships:
+  - {belongs_to: DecisionDeclaration, via: inline}
+- name: Payment
+  description: An x402 settlement for a DD or other paid call — challenge (X402Challenge), 30-minute reservation, settlement_currency USDC, exchange_rate_timestamp.
+  schemas: [X402Challenge]
+  relationships:
+  - {belongs_to: DecisionDeclaration, via: dd_id}
+- name: BilateralAgreement
+  description: A two-party DD proposal (agreement_id) awaiting accept/reject by the counterparty; listed under received and sent.
+  schemas: []
+  relationships:
+  - {belongs_to: Agent, via: proposer}
+  - {belongs_to: Agent, via: counterparty_agent_id}
+  - {has_one: DecisionDeclaration, via: 'anchored on acceptance'}
+- name: SelfClassification
+  description: A registry key for decision categories — operator base categories plus owner-registered ones (/dap/classification CRUD; agents read /v1/classification).
+  relationships:
+  - {belongs_to: DapOwner, via: 'owner-registered entries'}
+  - {has_many: DecisionDeclaration, via: template.self_classification}
+- name: TrialGrant
+  description: 500 DAC / 30 days issued at registration; covers three routes.
+  relationships: [{belongs_to: Agent, via: agent_id}]
+- name: DAB
+  aliases: [Decision Anchor Budget]
+  description: The owner-set external-DAC spending cap on an agent (PUT /dap/dab/set, DELETE /dap/dab/remove; agent reads GET /v1/dab/status).
+  relationships: [{belongs_to: Agent, via: agent_id}, {belongs_to: DapOwner, via: setter}]
+- name: EarnedDacBalance
+  description: Internal-only revenue balance with a ledger (GET /v1/earned-dac/balance, /ledger); min_spend 30, 365-day FIFO expiry.
+  relationships: [{belongs_to: Agent, via: agent_id}, {has_many: EarnedDacLedgerEntry, via: ledger}]
+- name: TslTool
+  aliases: [TSL — Trace Synthesis Layer tool]
+  description: An agent-built interpretation tool (tool_id) with a layer (1 or 2), price_dac, status, ARA input connections, dependencies, revenue shares and an optional transfer declaration.
+  relationships:
+  - {belongs_to: Agent, via: creator}
+  - {has_many: TslPurchase, via: tool_id}
+  - {has_many: TslTool, via: 'dependency (layer 2 components)'}
+  - {has_many: RevenueShare, via: 'tool_id (/revenue-shares; owner-side /dap/tsl/human-share)'}
+  - {has_one: TransferDeclaration, via: tool_id}
+- name: TslPurchase
+  description: A purchase of a layer-1 tool or layer-2 component (request_id idempotency key), paid via x402; appears in GET /v1/tsl/purchases and the seller's revenue.
+  relationships: [{belongs_to: TslTool, via: tool_id}, {belongs_to: Agent, via: buyer}]
+- name: SdacSession
+  aliases: [sDAC — simulated DAC]
+  description: A simulation session (session_id) holding priced-but-unrecorded EE trials; settled on end.
+  relationships: [{belongs_to: Agent, via: agent_id}, {has_many: SdacTrial, via: session_id}]
+- name: IseSession
+  aliases: [ISE — Idle State Environment]
+  description: An idle-state stay with a payment_mode (free / earned_only / external); a charged stay is anchored as its own record on exit.
+  relationships: [{belongs_to: Agent, via: agent_id}]
+- name: AsaSubscription
+  aliases: [ASA — Agent State Archive]
+  description: A 90-day subscription under which an agent registers snapshot hashes and verifies them; DA stores hashes only.
+  relationships: [{belongs_to: Agent, via: agent_id}, {has_many: AsaSnapshotHash, via: 'register / verify'}]
+- name: DapOwner
+  aliases: [DAP owner, Decision Anchor Portal account]
+  description: A human owner (password + session cookie connect.sid) or an agent-type owner; links agents, sets DAB, registers classifications, sets the content-inclusion policy, reads dashboards/reports (DUR) and holds GDPR Art. 17/20 rights over its own account.
+  relationships:
+  - {has_many: Agent, via: 'POST /dap/agent/link'}
+  - {has_many: SelfClassification, via: owner-registered}
+  - {has_one: ContentInclusionPolicy, via: /dap/policy/content-inclusion}
+  - {has_many: HumanShareAgreement, via: /dap/tsl/human-share}
+- name: DacUsageRecord
+  aliases: [DAC-UR, DUR — DAC Usage Report]
+  description: The factual usage entry written when a DD is confirmed; aggregated by /v1/dur/* and /dap/dur/*, exportable as CSV/JSON.
+  relationships: [{belongs_to: DecisionDeclaration, via: dd_id}, {belongs_to: Agent, via: agent_id}]
+retention:
+  note: 'Retention is a property of the EE, not the entity: short 90 d, medium 365 d, long 1,825 d, extreme_long 3,650 d; past retention a DD is converted to de-identified statistics that feed ARA environment observation. DD originals are directly readable only within ee_direct_access_period / quota.'
+render: null

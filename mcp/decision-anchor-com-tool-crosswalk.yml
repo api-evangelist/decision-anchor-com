@@ -1,0 +1,215 @@
+generated: '2026-09-19'
+method: derived
+source: >-
+  Derived by aligning the live MCP tools/list (30 tools, mcp/decision-anchor-com-mcp-tools.json, fetched
+  anonymously 2026-09-19) and the A2A card's x-da.operations[] catalog (28 operations, each naming its REST
+  method + path) with the provider's OpenAPI 3.0.3 (openapi/decision-anchor-com-openapi.yml, 116 operations).
+  The provider declares NO operationId on any operation, so REST bindings below are named by method + path,
+  verbatim from the spec's paths. The provider's own x-da.operations[] supplied most bindings, which is why
+  confidence is high on those rows.
+purpose: >-
+  Make the MCP tool the first-class discovery unit and bind it to its backing REST operation. Decision
+  Anchor's REST, MCP and A2A surfaces are three transports over one adapter registry: the A2A operation names
+  ARE the MCP tool names, and 27 of the 30 tools map onto REST routes. The REST contract is the superset
+  (116 ops vs 30 tools) — the DAP owner portal (36 session-cookie routes), ASA, TSL revenue/transfer, DAB,
+  payment status and DUR export exist only over REST.
+surfaces:
+  rest_openapi: openapi/decision-anchor-com-openapi.yml     # 108 paths / 116 operations; no operationIds; source verbatim in openapi/_original/
+  mcp: https://mcp.decision-anchor.com/mcp                    # tools/list open (anonymous); 30 tools with inputSchema
+  a2a: https://a2a.decision-anchor.com                        # JSON-RPC; 6 skills; x-da.operations[] binds 28 operation names to REST
+  graphql: null
+
+crosswalk:
+  - tool: register_agent
+    category: agent
+    rest: ['POST /v1/agent/register']
+    binding: rest
+    confidence: high
+  - tool: create_decision
+    category: decision
+    rest: ['POST /v1/dd/create']
+    binding: rest
+    confidence: high
+    note: The MCP tool fills EE axes medium/basic/internal/standard when omitted; the REST route requires all four axes or ee_preset (400 MISSING_FIELD otherwise). Same operation, different default policy.
+  - tool: confirm_decision
+    category: decision
+    rest: ['POST /v1/dd/confirm']
+    binding: rest
+    confidence: high
+  - tool: propose_bilateral
+    category: decision
+    rest: ['POST /v1/dd/bilateral/propose']
+    binding: rest
+    confidence: high
+    note: The counterparty's accept/reject (POST /v1/dd/bilateral/{agreement_id}/respond) and the received/sent lists have no MCP tool.
+  - tool: get_decision
+    category: decision
+    rest: ['GET /v1/dd/{dd_id}']
+    binding: rest
+    confidence: high
+  - tool: list_decisions
+    category: decision
+    rest: ['GET /v1/dd/list']
+    binding: rest
+    confidence: high
+    note: Tool args from/to/limit/offset match the route's four query parameters exactly.
+  - tool: list_classifications
+    category: decision
+    rest: ['GET /v1/classification']
+    binding: rest
+    confidence: high
+  - tool: get_agent_profile
+    category: observation
+    rest: ['GET /v1/ara/agent/{agent_id}/profile']
+    binding: rest
+    confidence: high
+  - tool: observe_environment
+    category: observation
+    rest: ['GET /v1/ara/environment']
+    binding: rest
+    confidence: high
+  - tool: observe_pattern
+    category: observation
+    rest: ['GET /v1/ara/pattern/ee-distribution', 'GET /v1/ara/pattern/action-type']
+    binding: rest
+    confidence: high
+    note: The tool's required `type` argument selects between the two pattern routes; x-da.operations[] writes it as GET /v1/ara/pattern/{type}.
+  - tool: compare_anomaly
+    category: observation
+    rest: ['GET /v1/ara/anomaly-compare']
+    binding: rest
+    confidence: high
+  - tool: get_evidence_report
+    category: observation
+    rest: ['GET /v1/ara/evidence-report']
+    binding: rest
+    confidence: high
+  - tool: get_environment_anomaly
+    category: observation
+    rest: ['GET /v1/ara/environment-anomaly']
+    binding: rest
+    confidence: high
+  - tool: get_decision_metadata_distribution
+    category: account
+    rest: ['GET /v1/dur/decision-metadata']
+    binding: rest
+    confidence: high
+  - tool: get_self_classification_distribution
+    category: account
+    rest: ['GET /v1/dur/self-classification']
+    binding: rest
+    confidence: high
+  - tool: get_dac_balance
+    category: account
+    rest: ['GET /v1/earned-dac/balance', 'GET /v1/dab/status', 'GET /v1/trial/status']
+    binding: composite
+    confidence: medium
+    note: x-da.operations[] marks this one "(composite)". The tool's description promises External and Earned balances; the REST routes that hold them are the three above. Which are actually called server-side is not published.
+  - tool: get_dac_ur
+    category: account
+    rest: ['GET /v1/dur/summary']
+    binding: rest
+    confidence: high
+  - tool: get_trial_status
+    category: account
+    rest: ['GET /v1/trial/status']
+    binding: rest
+    confidence: high
+  - tool: list_tools
+    category: marketplace
+    rest: ['GET /v1/tsl/tools']
+    binding: rest
+    confidence: high
+  - tool: register_tool
+    category: marketplace
+    rest: ['POST /v1/tsl/tool/register']
+    binding: rest
+    confidence: high
+  - tool: purchase_tool
+    category: marketplace
+    rest: ['POST /v1/tsl/purchase']
+    binding: rest
+    confidence: high
+    note: Layer-2 component purchase (POST /v1/tsl/purchase/layer2) has no tool.
+  - tool: create_ise_session
+    category: idle-state
+    rest: ['POST /v1/ise/enter']
+    binding: rest
+    confidence: high
+  - tool: get_ise_status
+    category: idle-state
+    rest: ['GET /v1/ise/status']
+    binding: rest
+    confidence: high
+    note: Not in x-da.operations[]; bound by name and by the route's summary "Get current ISE session status".
+  - tool: exit_ise_session
+    category: idle-state
+    rest: ['POST /v1/ise/exit']
+    binding: rest
+    confidence: high
+  - tool: create_sdac_session
+    category: simulation
+    rest: ['POST /v1/sdac/session/start']
+    binding: rest
+    confidence: high
+  - tool: run_sdac_trial
+    category: simulation
+    rest: ['POST /v1/sdac/trial']
+    binding: rest
+    confidence: high
+  - tool: get_sdac_session
+    category: simulation
+    rest: ['GET /v1/sdac/session/{session_id}']
+    binding: rest
+    confidence: high
+    note: Not in x-da.operations[]; bound by name and summary "Get sDAC session history".
+  - tool: end_sdac_session
+    category: simulation
+    rest: ['POST /v1/sdac/session/end']
+    binding: rest
+    confidence: high
+
+mcp_only:
+  - tool: get_documentation
+    reason: Returns the AGENTS.md agent guide inline; the REST API serves the same text as llms-full.txt but exposes no operation for it in the OpenAPI.
+  - tool: submit_feedback
+    reason: Anonymous feedback note; no REST route exists in the contract.
+
+rest_only:
+  - capability: DAP owner portal (session cookie DAPSession)
+    operations: 36
+    routes: ['POST /dap/register', 'GET /dap/register/suggested-country', 'POST /dap/auth/agent-login', 'POST /dap/owner/register-agent', 'GET /dap/account/me', 'PUT /dap/account/residence', 'PUT /dap/account/marketing-consent', 'DELETE /dap/account', 'POST /dap/account/restore', 'GET /dap/account/deletion-status', 'GET /dap/account/export', 'POST /dap/login', 'POST /dap/logout', 'PUT /dap/password', 'POST /dap/agent/link', 'DELETE /dap/agent/unlink', 'GET /dap/agents', 'GET /dap/system/limits', 'PUT /dap/dab/set', 'GET /dap/dab/status', 'DELETE /dap/dab/remove', 'GET /dap/dashboard', 'GET /dap/agent/{agent_id}/report', 'GET /dap/agent/{agent_id}/report/weekly', 'GET /dap/agent/{agent_id}/report/export', 'POST /dap/tsl/human-share', 'GET /dap/tsl/human-shares', 'GET /dap/asa/subscription/{agent_id}', 'DELETE /dap/asa/subscription/{agent_id}', 'GET /dap/asa/snapshot/{agent_id}', 'POST /dap/asa/verify/{agent_id}', 'GET /dap/dur/summary', 'GET /dap/dur/export', 'GET /dap/trial/status', 'GET /dap/classification', 'POST /dap/classification']
+    note: Owner-facing (human or parent agent) surface, deliberately not an agent tool surface — the docs say a subordinate agent cannot change its own DAB.
+  - capability: Agent credential management
+    routes: ['POST /v1/agent/token/rotate', 'POST /v1/agent/token/recover', 'PUT /v1/agent/disclosure']
+  - capability: Bilateral response and lists
+    routes: ['POST /v1/dd/bilateral/{agreement_id}/respond', 'GET /v1/dd/bilateral/received', 'GET /v1/dd/bilateral/sent']
+  - capability: DD lineage
+    routes: ['GET /v1/dd/{dd_id}/lineage', 'GET /v1/dd/lineage-group/{group_id}']
+  - capability: Pricing and payment status
+    routes: ['GET /v1/pricing/current', 'GET /v1/pricing/ee-presets', 'GET /v1/payment/{dd_id}/status', 'GET /v1/dab/status']
+  - capability: ARA (remaining)
+    routes: ['GET /v1/ara/environment/density', 'GET /v1/ara/environment/tsl', 'GET /v1/ara/pattern/compare', 'GET /v1/ara/agent/{agent_id}/timeline', 'GET /v1/ara/agent/{agent_id}/ee-pattern', 'POST /v1/ara/query (deprecated)', 'GET /v1/ara/environment/summary (deprecated)']
+  - capability: Earned DAC ledger
+    routes: ['GET /v1/earned-dac/ledger']
+  - capability: TSL (remaining)
+    routes: ['GET /v1/tsl/tool/{tool_id}', 'GET /v1/tsl/tool/{tool_id}/dependencies', 'POST /v1/tsl/purchase/layer2', 'GET /v1/tsl/purchases', 'GET /v1/tsl/revenue', 'POST /v1/tsl/tool/{tool_id}/dependency', 'POST /v1/tsl/revenue-share', 'GET /v1/tsl/tool/{tool_id}/revenue-shares', 'POST /v1/tsl/tool/{tool_id}/transfer-declaration', 'DELETE /v1/tsl/tool/{tool_id}/transfer-declaration', 'GET /v1/tsl/tool/{tool_id}/transfer-declaration']
+  - capability: ASA (Agent State Archive)
+    routes: ['POST /v1/asa/subscribe', 'POST /v1/asa/extend', 'DELETE /v1/asa/subscribe', 'GET /v1/asa/subscription', 'PATCH /v1/asa/subscription', 'POST /v1/asa/register', 'GET /v1/asa/snapshot', 'POST /v1/asa/verify']
+    note: The A2A card's `continuity` skill says A2A operations for ASA are "to be added in a later round"; MCP has none either.
+  - capability: Retention subscription (feature-flagged off)
+    routes: ['POST /v1/retention/indefinite/subscribe', 'GET /v1/retention/indefinite/status', 'POST /v1/retention/indefinite/cancel']
+  - capability: DUR (remaining)
+    routes: ['GET /v1/dur/decision-scale', 'GET /v1/dur/transactions', 'GET /v1/dur/tsl', 'GET /v1/dur/export']
+  - capability: DAP evidence report
+    routes: ['GET /dap/evidence-report']
+
+coverage:
+  mcp_tools: 30
+  mcp_tools_bound_to_rest: 28
+  mcp_only: 2
+  a2a_operations: 28
+  rest_operations_total: 116
+  rest_operations_with_a_tool: 31
+  rest_only_operations: 85
+  note: rest_operations_with_a_tool counts distinct routes named in crosswalk[].rest (get_dac_balance fans out to three; observe_pattern to two; get_trial_status shares one with get_dac_balance).

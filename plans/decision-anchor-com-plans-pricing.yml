@@ -1,0 +1,72 @@
+generated: '2026-09-19'
+method: probed
+source: https://api.decision-anchor.com/v1/pricing/current
+docs:
+- https://api.decision-anchor.com/.well-known/x402.json
+- https://api.decision-anchor.com/v1/pricing/ee-presets
+- https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+plan_count: 3
+currency: DAC (Decision Anchor Cost) settled in USDC on Base via x402
+model: usage-based per record, priced in an internal unit (DAC) with three funding sources; no subscriptions except ASA; no seats; no tiers
+pricing_version: v1.3.0
+effective_from: '2026-05-30'
+summary: >-
+  Decision Anchor publishes its price list as a machine-readable endpoint (GET /v1/pricing/current, no auth)
+  and an x402 discovery document, not as a pricing page. Every use of the environment costs DAC: a base fee
+  of 10 DAC per Decision Declaration plus per-axis Execution Envelope adds, times a 1.5 multiplier when two of
+  three high-accountability conditions hold. The three "plans" are the three funding sources the docs
+  describe: a free Trial grant (500 DAC / 30 days) that covers three routes, External DAC paid per call in
+  USDC through x402 ($0.01 base on a DD create, $0.10 on ASA), and Earned DAC won by selling tools on the TSL
+  marketplace (internal-only, non-convertible). The DAC-to-USD rate is not published in any surface found;
+  x402.json publishes only USD price_base per endpoint.
+plans:
+- id: trial
+  name: Trial DAC
+  price: 0
+  currency: USDC
+  period: 30 days from registration
+  included: 500 DAC
+  applies_to: ['POST /v1/dd/create', 'POST /v1/sdac/session/end', 'POST /v1/ise/exit']
+  excluded: [ARA paid observation, bilateral propose, TSL purchase, ASA]
+  overage: falls through to External DAC (x402 challenge) or Earned DAC where accepted
+  source: '/.well-known/x402.json trial{enabled, amount_dac 500, period_days 30, applies_to[3]}'
+- id: external
+  name: External DAC (pay per call in USDC via x402)
+  price: 'per endpoint: $0.01 base on POST /v1/dd/create, /v1/dd/bilateral/propose, /v1/tsl/purchase, /v1/tsl/purchase/layer2, /v1/sdac/session/end, /v1/ise/exit; $0.10 base on POST /v1/asa/subscribe and /v1/asa/extend; ARA observation routes priced in DAC (1 DAC environment/pattern, 5 DAC anomaly-compare, 10 DAC evidence-report, 3 DAC + resolution surcharge for another agent''s profile) with no USD figure published'
+  currency: USDC
+  period: per call
+  network: eip155:8453 (Base) via facilitator https://x402.coinbase.com
+  limits: ['owner-set DAB (Decision Anchor Budget) caps external spending per period; a subordinate agent cannot raise it', '30-minute confirmation window on an externally paid DD']
+  source: '/.well-known/x402.json paid_endpoints[20]; GET /v1/dd/create payment block'
+- id: earned
+  name: Earned DAC (TSL marketplace revenue)
+  price: n/a — earned, not bought
+  currency: DAC (internal)
+  period: 365-day expiry, FIFO consumption
+  limits: ['min_spend 30 DAC before it can be used', 'non-transferable; no reverse conversion to external currency', 'usable for EE/ARA resolution surcharges, ISE stays, ASA (earned_enabled true); NOT for DD base fees or TSL purchases', 'not subject to DAB']
+  source: 'GET /v1/pricing/current earned_dac{min_spend 30, expiry_days 365}; AGENTS.md DAC Usage Matrix'
+price_list:
+  base_fee_dac: 10
+  formula: 'total = subtotal × multiplier; subtotal = base_fee + retention_add + disclosure_add + responsibility_add + content_disclosure_scope_add + delegation_state_add + integrity_add; multiplier = 1.5 when 2+ of [Retention = Long, Disclosure = Exportable, Responsibility = Extended] hold, else 1.0'
+  ee_axes_dac:
+    retention: {short: 0, medium: 20, long: 50, extreme_long: 100 (one-time overlay), indefinite: 'not available (subscription 50 DAC/month declared, available false)'}
+    disclosure: {internal: 0, shareable: 10, exportable: 30}
+    responsibility: {minimal: 0, standard: 15, extended: 35}
+    content_disclosure_scope: {owner: 0, external: 15, public: 40}
+    delegation_state: {none: 0, partial: 10, full: 30}
+    integrity: {basic: 0, enhanced: 15, certifiable: 40, note: 'active false — applied add is 0 at every level today'}
+  presets_dac:
+  - {preset: EE_basic, axes: short/basic/internal/minimal, total: 10}
+  - {preset: EE_standard, axes: medium/basic/internal/standard, total: 45}
+  - {preset: EE_high, axes: long/enhanced/shareable/extended, total: 157.5, note: 'multiplier 1.5 applies (long + extended)'}
+  observation_dac:
+  - {what: environment / pattern observation, dac: 1, funding: external only}
+  - {what: another agent's profile / timeline / ee-pattern, dac: '3 base + resolution surcharge (level 2-3)', funding: base external; surcharge may be Earned}
+  - {what: own agent-level records, dac: 0}
+  - {what: anomaly-compare, dac: 5, funding: external only}
+  - {what: evidence-report, dac: 10, funding: external only}
+  asa_subscription: {base_cost_dac: 100, base_period_days: 90, grace_days: 7, max_periods: 12, includes: [register, verify, snapshot], usd_base: '$0.10 via x402', earned_enabled: true}
+  sync_reward: {dac_amount: 1 Earned DAC, window_minutes: 10, condition: 'record declares decision_at within the window of anchored_at'}
+notes:
+- 'The DAC/USD exchange rate is not published; the 201 response on a DD create carries "approx KRW (live estimate at current rate, not a settled claim)", implying a live rate.'
+- 'GET /dap/system/limits (owner session) exists and likely holds account-level caps; it is behind the portal login and was not probed.'

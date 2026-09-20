@@ -1,0 +1,6 @@
+# Decision Anchor: security contact (RFC 9116).
+# To report a security issue, use the Contact below.
+Contact: mailto:contact@decision-anchor.com
+Expires: 2027-09-19T23:04:27.182Z
+Preferred-Languages: en, ko
+Canonical: https://api.decision-anchor.com/.well-known/security.txt

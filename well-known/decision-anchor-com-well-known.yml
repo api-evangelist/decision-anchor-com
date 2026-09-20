@@ -1,0 +1,215 @@
+generated: '2026-09-19'
+method: probed
+source: >-
+  Live GET probes of the named /.well-known/* path list on every host the record knows — decision-anchor.com
+  (apex website), api.decision-anchor.com (OpenAPI servers[] host), mcp.decision-anchor.com (MCP server host),
+  a2a.decision-anchor.com (A2A JSON-RPC host and the agent card's url), solo.decision-anchor.com and
+  business.decision-anchor.com (marketing microsites) — on 2026-09-19. Every row below is a request that was
+  actually issued; every status is the one returned. www.decision-anchor.com does not resolve (curl exit 6).
+summary:
+  hosts_probed: 6
+  paths_probed: 88
+  documents_served: 11
+  hit_count: 11
+  note: >-
+    Decision Anchor concentrates its machine-readable surface on the three service hosts and serves nothing
+    under /.well-known/ on the apex or the microsites. The api, mcp and a2a hosts each serve an RFC 9116
+    security.txt (Contact, Expires, Preferred-Languages, Canonical; no Policy line), an A2A agent card at both
+    the canonical and the legacy path, and an MCP discovery document at /.well-known/mcp.json — the api host's
+    is the real server card (id com.decision-anchor/da, endpoint, transport, registry), the mcp and a2a hosts'
+    are pointer documents that name the api host as canonical. The api host additionally serves an x402
+    payment-discovery document at /.well-known/x402.json and the a2a host a JWKS with the Ed25519 key that
+    signs the agent card. No OAuth/OIDC discovery anywhere: the API's own 404 body states "Decision Anchor
+    does not use OAuth-based authorization discovery. To interact: register for a bearer token", so the
+    RFC 8414 / RFC 9728 misses on the MCP host describe the auth model accurately rather than an omission. No
+    RFC 9727 api-catalog, no APIs.json, no ai-plugin, no UCP/ACP/AAuth manifests. The apex 404 is a real HTML
+    404 page (title "404: Decision Anchor", 773 bytes) and the service hosts' 404 is a JSON error body, so a
+    200 on any of these hosts is a served document, not a catch-all.
+hosts:
+- host: decision-anchor.com
+  role: Apex website (vision site, blog, changelog); no API served here
+  documents:
+  - {path: /.well-known/security.txt, status: 404}
+  - {path: /.well-known/openid-configuration, status: 404}
+  - {path: /.well-known/oauth-authorization-server, status: 404}
+  - {path: /.well-known/oauth-protected-resource, status: 404}
+  - {path: /.well-known/api-catalog, status: 404}
+  - {path: /.well-known/ai-plugin.json, status: 404}
+  - {path: /.well-known/ucp.json, status: 404}
+  - {path: /.well-known/acp.json, status: 404}
+  - {path: /.well-known/aauth-resource.json, status: 404}
+  - {path: /.well-known/apis.json, status: 404}
+  - {path: /apis.json, status: 404}
+  - {path: /apis.yml, status: 404}
+  - {path: /.well-known/agent-card.json, status: 404}
+  - {path: /.well-known/agent.json, status: 404}
+  - {path: /.well-known/mcp.json, status: 404}
+  - path: /llms.txt
+    status: 200
+    content_type: text/plain; charset=utf-8
+    bytes: 6138
+    note: Byte-identical to https://api.decision-anchor.com/llms.txt, which is the copy saved under llms/. robots.txt on this host points agents at the api host for llms.txt and openapi.json.
+  - path: /llms-full.txt
+    status: 200
+    content_type: text/plain; charset=utf-8
+    bytes: 27348
+    note: Not committed (gitignored); identical to the api host copy.
+  - {path: /robots.txt, status: 200, content_type: text/plain; charset=utf-8, note: 'Allow: /; Sitemap: https://decision-anchor.com/sitemap.xml; comments name api.decision-anchor.com/llms.txt and /openapi.json.'}
+  - {path: /sitemap.xml, status: 200, content_type: application/xml, note: 76 URLs — six locales of the home page, blog posts and the changelog.}
+- host: api.decision-anchor.com
+  role: REST API host (OpenAPI servers[]); canonical home of the discovery documents
+  documents:
+  - path: /.well-known/security.txt
+    status: 200
+    content_type: text/plain; charset=utf-8
+    bytes: 275
+    file: decision-anchor-com-security.txt
+    standard: RFC 9116
+    note: 'Contact: mailto:contact@decision-anchor.com; Expires 2027-09-19; Preferred-Languages en, ko; Canonical https://api.decision-anchor.com/.well-known/security.txt. No Policy, Encryption or Acknowledgments line.'
+  - {path: /.well-known/openid-configuration, status: 404, note: 'JSON 404: "Decision Anchor does not use OAuth-based authorization discovery."'}
+  - {path: /.well-known/oauth-authorization-server, status: 404}
+  - {path: /.well-known/oauth-protected-resource, status: 404}
+  - {path: /.well-known/api-catalog, status: 404}
+  - {path: /.well-known/api-catalog.json, status: 404}
+  - {path: /.well-known/ai-plugin.json, status: 404}
+  - {path: /.well-known/ucp.json, status: 404}
+  - {path: /.well-known/acp.json, status: 404}
+  - {path: /.well-known/aauth-resource.json, status: 404}
+  - {path: /.well-known/apis.json, status: 404}
+  - {path: /apis.json, status: 404}
+  - {path: /apis.yml, status: 404}
+  - path: /.well-known/agent-card.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 8347
+    standard: A2A Agent Card (protocolVersion 1.0)
+    note: Same card as the a2a host minus signatures[] and x-da.operations[]; the a2a-host copy is the one saved verbatim under a2a/. Graded conformant in a2a/decision-anchor-com-a2a.yml.
+  - {path: /.well-known/agent.json, status: 200, content_type: application/json; charset=utf-8, bytes: 8347, note: Legacy path, identical body.}
+  - path: /.well-known/mcp.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 436
+    file: decision-anchor-com-mcp.json
+    standard: MCP server discovery document (non-standard path; provider-defined shape)
+    note: 'id com.decision-anchor/da, version 1.3.42, endpoints.mcp https://mcp.decision-anchor.com/mcp, transport [streamable-http], registry com.decision-anchor/da, documentation = the OpenAPI, agents_guide = AGENTS.md.'
+  - path: /.well-known/x402.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    file: decision-anchor-com-x402.json
+    standard: x402 payment discovery (provider-defined shape)
+    note: 'x402_supported true; networks [eip155:8453]; facilitator https://x402.coinbase.com; 20 paid_endpoints with price_base, trial_eligible and accepts_earned flags; trial block (500 DAC / 30 days, applies_to 3 routes). Feeds plans/ and conformance/.'
+  - {path: /openapi.json, status: 200, content_type: application/json; charset=utf-8, bytes: 196115, note: 'OpenAPI 3.0.3, 108 paths / 116 operations; saved under openapi/. Response header x-da-spec-version: 1.3.42; last-modified Wed, 16 Sep 2026.'}
+  - {path: /llms.txt, status: 200, content_type: text/plain; charset=utf-8, bytes: 6138, note: Saved verbatim as llms/decision-anchor-com-llms.txt.}
+  - {path: /llms-full.txt, status: 200, content_type: text/plain; charset=utf-8, bytes: 27348, note: Not committed (gitignored).}
+  - {path: /robots.txt, status: 200, content_type: text/plain; charset=utf-8, note: 'Allow: /; comments point AI agents at llms.txt, llms-full.txt and openapi.json.'}
+  - {path: /health, status: 200, content_type: application/json; charset=utf-8, note: '{"status":"ok","version":"1.3.42","uptime_seconds":...,"dac_ur_batch":{...}} — a liveness endpoint, not a status page.'}
+- host: mcp.decision-anchor.com
+  role: MCP server host (Streamable HTTP endpoint at /mcp); RFC 9728 resource host for the MCP server
+  documents:
+  - path: /.well-known/security.txt
+    status: 200
+    content_type: text/plain; charset=utf-8
+    bytes: 275
+    file: decision-anchor-com-mcp-security.txt
+    standard: RFC 9116
+  - {path: /.well-known/openid-configuration, status: 404}
+  - {path: /.well-known/oauth-authorization-server, status: 404, note: No RFC 8414 metadata; the server declares no OAuth (auth is a Decision Anchor bearer token issued by register_agent).}
+  - {path: /.well-known/oauth-protected-resource, status: 404, note: No RFC 9728 protected-resource metadata for the MCP resource server; consistent with the stated non-OAuth model.}
+  - {path: /.well-known/api-catalog, status: 404}
+  - {path: /.well-known/ai-plugin.json, status: 404}
+  - {path: /.well-known/ucp.json, status: 404}
+  - {path: /.well-known/acp.json, status: 404}
+  - {path: /.well-known/aauth-resource.json, status: 404}
+  - {path: /.well-known/apis.json, status: 404}
+  - {path: /apis.json, status: 404}
+  - {path: /apis.yml, status: 404}
+  - {path: /.well-known/agent-card.json, status: 200, content_type: application/json; charset=utf-8, bytes: 8347, standard: A2A Agent Card, note: Same 8,347-byte copy as the api host.}
+  - {path: /.well-known/agent.json, status: 200, content_type: application/json; charset=utf-8, bytes: 8347, note: Legacy path, identical body.}
+  - path: /.well-known/mcp.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 328
+    file: decision-anchor-com-mcp-host-mcp.json
+    note: A pointer document — "This is the MCP host. The MCP server card is served on the api host; the MCP endpoint is below." — naming mcp_endpoint, server_card and agent_card.
+  - {path: /openapi.json, status: 404}
+  - {path: /llms.txt, status: 404}
+  - {path: /, status: 200, content_type: application/json; charset=utf-8, note: Service descriptor naming the POST /mcp endpoint and the canonical documents on the api host.}
+  - {path: /mcp, status: 405, method: GET, note: '{"error":"method_not_allowed",...,"endpoint":"POST https://mcp.decision-anchor.com/mcp"}; POST initialize and tools/list answered 200 (see mcp/).'}
+- host: a2a.decision-anchor.com
+  role: A2A JSON-RPC host; the agent card's url
+  documents:
+  - path: /.well-known/security.txt
+    status: 200
+    content_type: text/plain; charset=utf-8
+    bytes: 278
+    file: decision-anchor-com-a2a-security.txt
+    standard: RFC 9116
+  - {path: /.well-known/openid-configuration, status: 404}
+  - {path: /.well-known/oauth-authorization-server, status: 404}
+  - {path: /.well-known/oauth-protected-resource, status: 404}
+  - {path: /.well-known/api-catalog, status: 404}
+  - {path: /.well-known/ai-plugin.json, status: 404}
+  - {path: /.well-known/ucp.json, status: 404}
+  - {path: /.well-known/acp.json, status: 404}
+  - {path: /.well-known/aauth-resource.json, status: 404}
+  - {path: /.well-known/apis.json, status: 404}
+  - {path: /apis.json, status: 404}
+  - {path: /apis.yml, status: 404}
+  - path: /.well-known/agent-card.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 11545
+    file: ../a2a/decision-anchor-com-agent-card.json
+    standard: A2A Agent Card (protocolVersion 1.0)
+    note: The complete card — includes signatures[] and x-da.operations[28]. Saved verbatim under a2a/ and graded conformant.
+  - {path: /.well-known/agent.json, status: 200, content_type: application/json; charset=utf-8, bytes: 11545, note: Legacy path, identical body.}
+  - path: /.well-known/jwks.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 168
+    file: decision-anchor-com-a2a-jwks.json
+    standard: RFC 7517 JWK Set
+    note: One Ed25519 OKP key (alg EdDSA, use sig) — the key the agent card's signatures[] block is verified against.
+  - path: /.well-known/mcp.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 328
+    file: decision-anchor-com-a2a-host-mcp.json
+    note: Pointer document naming the MCP endpoint and the canonical server card on the api host.
+  - {path: /, status: 200, content_type: application/json; charset=utf-8, note: 'Service descriptor: rpc.endpoint "/", methods message/send, tasks/get, tasks/list, tasks/cancel, agent/card/get.'}
+- host: solo.decision-anchor.com
+  role: Marketing microsite (solo operators); links to api. and the MCP endpoint
+  documents:
+  - {path: /.well-known/security.txt, status: 404}
+  - {path: /.well-known/openid-configuration, status: 404}
+  - {path: /.well-known/oauth-authorization-server, status: 404}
+  - {path: /.well-known/oauth-protected-resource, status: 404}
+  - {path: /.well-known/api-catalog, status: 404}
+  - {path: /.well-known/ai-plugin.json, status: 404}
+  - {path: /.well-known/ucp.json, status: 404}
+  - {path: /.well-known/acp.json, status: 404}
+  - {path: /.well-known/aauth-resource.json, status: 404}
+  - {path: /.well-known/apis.json, status: 404}
+  - {path: /apis.json, status: 404}
+  - {path: /apis.yml, status: 404}
+  - {path: /.well-known/agent-card.json, status: 404}
+  - {path: /.well-known/agent.json, status: 404}
+  - {path: /.well-known/mcp.json, status: 404}
+- host: business.decision-anchor.com
+  role: Marketing microsite (business); links to api. and the MCP endpoint
+  documents:
+  - {path: /.well-known/security.txt, status: 404}
+  - {path: /.well-known/openid-configuration, status: 404}
+  - {path: /.well-known/oauth-authorization-server, status: 404}
+  - {path: /.well-known/oauth-protected-resource, status: 404}
+  - {path: /.well-known/api-catalog, status: 404}
+  - {path: /.well-known/ai-plugin.json, status: 404}
+  - {path: /.well-known/ucp.json, status: 404}
+  - {path: /.well-known/acp.json, status: 404}
+  - {path: /.well-known/aauth-resource.json, status: 404}
+  - {path: /.well-known/apis.json, status: 404}
+  - {path: /apis.json, status: 404}
+  - {path: /apis.yml, status: 404}
+  - {path: /.well-known/agent-card.json, status: 404}
+  - {path: /.well-known/agent.json, status: 404}
+  - {path: /.well-known/mcp.json, status: 404}

@@ -1,0 +1,24 @@
+generated: '2026-09-19'
+method: derived
+source: openapi/decision-anchor-com-openapi.yml
+summary:
+  types:
+  - apiKey
+  - http
+  api_key_in:
+  - cookie
+schemes:
+- name: AgentToken
+  type: http
+  scheme: bearer
+  description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in
+    the Authorization header using the Bearer scheme, followed by the issued token value.
+  sources:
+  - openapi/decision-anchor-com-openapi.yml
+- name: DAPSession
+  type: apiKey
+  in: cookie
+  parameter: connect.sid
+  description: Session cookie issued after DAP login
+  sources:
+  - openapi/decision-anchor-com-openapi.yml

@@ -1,0 +1,62 @@
+generated: '2026-09-19'
+method: searched
+source: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+docs:
+- https://api.decision-anchor.com/openapi.json
+- https://api.decision-anchor.com/.well-known/x402.json
+probed:
+- {url: 'https://api.decision-anchor.com/v1/pricing/current', status: 200, fetched: '2026-09-19'}
+- {url: 'https://api.decision-anchor.com/v1/pricing/ee-presets', status: 200, fetched: '2026-09-19'}
+- {url: 'https://api.decision-anchor.com/v1/dd/create', method: GET, status: 200, fetched: '2026-09-19', note: guidance document, not a record}
+summary: >-
+  Decision Anchor has no separate test environment, no test-mode keys and no separate host: production is the
+  sandbox. What it publishes instead are three rehearsal mechanisms — a free Trial balance every new agent
+  receives, a paid-at-a-fraction simulation layer (sDAC) that prices Execution Envelope combinations without
+  creating a record, and free unauthenticated pricing endpoints plus GET-on-POST guidance documents that
+  return a working example call. No fixture values are published, and none are invented here.
+test_vs_live:
+  separate_environment: false
+  separate_host: false
+  key_prefixes:
+    auth_token: da_tk_
+    recovery_key: da_rk_
+    note: One key type; the prefixes distinguish credential kinds, not test from live.
+  note: One host, one credential type. Trial-paid and externally-paid records are the same records — the difference shows in the response (status trial_paid vs pending_payment).
+trial:
+  grant: 500 DAC for 30 days, automatically on POST /v1/agent/register (no auth, no payment method)
+  applies_to: ['POST /v1/dd/create', 'POST /v1/sdac/session/end', 'POST /v1/ise/exit']
+  does_not_apply_to: 'ARA paid observation ("there is no trial fallback on this path"), bilateral propose, TSL purchase, ASA'
+  check: 'GET /v1/trial/status (auth) — balance, expiry and the routes the trial covers'
+  source: https://api.decision-anchor.com/.well-known/x402.json trial block; AGENTS.md
+simulation:
+  name: sDAC (simulated DAC)
+  operations:
+  - 'POST /v1/sdac/session/start'
+  - 'POST /v1/sdac/trial   # "Simulate EE combination (trial run)"'
+  - 'GET /v1/sdac/session/{session_id}'
+  - 'POST /v1/sdac/session/end   # settles; trial-eligible; $0.01 base via x402 otherwise'
+  mcp_tools: [create_sdac_session, run_sdac_trial, get_sdac_session, end_sdac_session]
+  cost: >-
+    "An identical-physics environment with accountability removed. The same cost function as the real cost
+    structure applies, and a fraction (ratio-based) of the cost is actually paid. Not a free simulation."
+    The ratio itself is not published in any surface found.
+  leaves_records: false — "sDAC usage history does not leave accountability records in Core"
+free_preflight:
+  - operation: 'GET /v1/pricing/current'
+    auth: none
+    returns: base_fee 10 DAC, every EE axis add, multiplier rule, formula, earned_dac and asa parameters
+  - operation: 'GET /v1/pricing/ee-presets'
+    auth: none
+    returns: 'EE_basic (10 DAC), EE_standard (45 DAC), EE_high (157.5 DAC) with their axis values'
+  - operation: 'GET /v1/dd/create and GET /v1/agent/register (GET on the POST routes)'
+    auth: none
+    returns: how_to_call, curl_example, authentication and payment terms — a runnable minimal call
+fixtures:
+  test_values: none published
+  example_ids_in_docs: 'AGENTS.md uses placeholder ids (00000000-0000-4000-8000-000000000000, e8b35dce-...) and placeholder credentials (da_tk_abc123..., da_rk_def456...) in its curl walk-through; these are illustrations, not usable test tokens'
+  minimal_first_record:
+    source: 'GET https://api.decision-anchor.com/v1/dd/create how_to_call.body_example (verbatim)'
+    body: {request_id: '<uuid v4>', dd: {dd_unit_type: single, dd_declaration_mode: self_declared, decision_type: external_interaction, decision_action_type: execute, origin_context_type: external, selection_state: SELECTED}, ee: {ee_preset: EE_standard}}
+payment_testing:
+  network: Base mainnet only (eip155:8453) — no testnet is documented
+  note: 'External payment cannot be rehearsed without real USDC; the Trial balance is the documented way to exercise the paid routes it covers.'

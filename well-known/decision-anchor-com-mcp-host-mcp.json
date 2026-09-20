@@ -1,0 +1,1 @@
+{"name":"Decision Anchor","note":"This is the MCP host. The MCP server card is served on the api host; the MCP endpoint is below.","mcp_endpoint":"https://mcp.decision-anchor.com/mcp","server_card":"https://api.decision-anchor.com/.well-known/mcp.json","agent_card":"https://api.decision-anchor.com/.well-known/agent-card.json"}

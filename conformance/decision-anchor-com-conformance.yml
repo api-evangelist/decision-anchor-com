@@ -1,0 +1,122 @@
+generated: '2026-09-19'
+method: searched
+source: https://api.decision-anchor.com/openapi.json
+derived_from: openapi/decision-anchor-com-openapi.yml
+docs:
+- https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+- https://api.decision-anchor.com/.well-known/x402.json
+- https://a2a.decision-anchor.com/.well-known/agent-card.json
+summary: >-
+  Decision Anchor's conformance profile is the agent-protocol stack, declared in its own machine-readable
+  documents rather than on a marketing page: an A2A 1.0 agent card (signed, JWKS published) on a dedicated
+  host, an MCP server at protocol version 2025-06-18 listed in the official registry, JSON-RPC 2.0 on both,
+  x402 v2 (HTTP 402) payment settled in USDC on Base (CAIP-2 eip155:8453) through the Coinbase facilitator,
+  RFC 6750 bearer tokens, RFC 9116 security.txt on all three service hosts, and the IETF RateLimit header
+  fields observed live on every API response. The contract itself declares GDPR Article 17 and Article 20
+  operations for portal accounts. It declares NO OAuth 2.0 / OIDC (and says so in its 404 body), no RFC 9457
+  problem details, no RFC 9727 API catalog, no RFC 8594 Sunset/Deprecation headers, and no webhooks or
+  AsyncAPI surface. No SOC 2 / ISO 27001 / PCI program is published anywhere found, so no Compliance pointer
+  is emitted.
+standards:
+- id: x402
+  name: x402 HTTP payment protocol
+  version: '2'
+  conforms: true
+  domain_standard_signature: true
+  evidence: >-
+    openapi components.schemas.X402Challenge declares x402Version enum [2]; components.responses.PaymentRequired
+    declares the PAYMENT-REQUIRED response header ("Base64-encoded x402 challenge (canonical source; the JSON
+    body is a convenience copy)") and the Payment-Signature retry header; 17 operations declare a 402 response.
+    https://api.decision-anchor.com/.well-known/x402.json (200) declares x402_supported true, networks
+    [eip155:8453], facilitator https://x402.coinbase.com, a payment_address and 20 paid_endpoints. The live
+    GET https://api.decision-anchor.com/v1/dd/create guidance body states protocol x402, protocol_version 2,
+    settles_in USDC, network eip155:8453. AGENTS.md: "X-PAYMENT is the x402 v1 header name and is not accepted."
+  note: >-
+    The contract-level signature for the agent-commerce market. The 402 challenge itself was NOT triggered by
+    this pipeline (doing so means POSTing a write route); recorded on the provider's declarations in the
+    contract, the discovery document and the live GET guidance, which agree with one another.
+- id: mcp
+  name: Model Context Protocol
+  version: '2025-06-18'
+  conforms: true
+  evidence: 'POST https://mcp.decision-anchor.com/mcp initialize returned protocolVersion "2025-06-18", serverInfo {Decision Anchor, 1.3.42}, capabilities.tools.listChanged true; tools/list returned 30 tools with JSON Schema draft-07 inputSchema. Listed in registry.modelcontextprotocol.io as com.decision-anchor/da. See mcp/decision-anchor-com-mcp.yml.'
+- id: a2a
+  name: Agent2Agent protocol
+  version: '1.0'
+  conforms: true
+  evidence: 'a2a/decision-anchor-com-agent-card.json — protocolVersion "1.0", url https://a2a.decision-anchor.com, preferredTransport JSONRPC, capabilities object, skills[] of 6, securitySchemes bearer, signatures[] with a published JWKS; POST https://a2a.decision-anchor.com/ tasks/get answered A2A error -32001 Task not found; agent/card/get returned the card. Graded conformant in a2a/decision-anchor-com-a2a.yml.'
+- id: json-rpc-2.0
+  conforms: true
+  evidence: 'Both the MCP and A2A endpoints answer {"jsonrpc":"2.0", ...}; the A2A endpoint returned the A2A-defined -32001 error object.'
+- id: jws-agent-card-signature
+  name: A2A signed agent card (JWS) with JWK Set discovery
+  conforms: true
+  evidence: 'The a2a-host card carries a signatures[] block; https://a2a.decision-anchor.com/.well-known/jwks.json (200) publishes one Ed25519 OKP key (alg EdDSA, use sig). Saved as well-known/decision-anchor-com-a2a-jwks.json. Signature verification was not performed by this pipeline.'
+- id: caip-2
+  name: CAIP-2 chain identifier
+  conforms: true
+  evidence: 'eip155:8453 (Base mainnet) in /.well-known/x402.json networks[] and in the openapi X402Challenge.accepts[].network description.'
+- id: rfc6750-bearer
+  name: OAuth 2.0 Bearer Token Usage (RFC 6750 header form)
+  conforms: true
+  evidence: 'openapi securitySchemes.AgentToken = http bearer, applied to 69 operations; agent card securitySchemes.bearer; live 401 body: "The \"Bearer \" prefix is required and is not optional." The token is a Decision Anchor-issued da_tk_ credential, not an OAuth access token.'
+- id: rfc9116-security-txt
+  conforms: true
+  evidence: 'https://api.decision-anchor.com/.well-known/security.txt, https://mcp.decision-anchor.com/.well-known/security.txt and https://a2a.decision-anchor.com/.well-known/security.txt all 200 with Contact, Expires (2027-09-19), Preferred-Languages and Canonical fields. No Policy field.'
+- id: ietf-ratelimit-headers
+  name: IETF RateLimit header fields (draft-ietf-httpapi-ratelimit-headers)
+  conforms: true
+  verification: observed
+  evidence: 'Every live response from api.decision-anchor.com carried ratelimit-limit: 100, ratelimit-policy: 100;w=60, ratelimit-remaining and ratelimit-reset (observed 2026-09-19 on GET /v1/pricing/current, /v1/pricing/ee-presets, /v1/dd/create, /v1/trial/status, /v1/agent/register). Not declared in the OpenAPI.'
+- id: rfc7517-jwks
+  conforms: true
+  evidence: 'https://a2a.decision-anchor.com/.well-known/jwks.json — a JWK Set with kty, crv, x, use, alg, kid.'
+- id: gdpr-data-subject-rights
+  name: GDPR Article 17 (erasure) and Article 20 (portability) operations
+  conforms: true
+  evidence: 'openapi DELETE /dap/account summary "Request account deletion (30-day grace period, GDPR Art. 17)"; POST /dap/account/restore "Restore account within the deletion grace period"; GET /dap/account/deletion-status; GET /dap/account/export "Export own account data (GDPR Art. 20)". DAP owner (portal) accounts only; agent identities have no such routes.'
+  note: Recorded because the contract itself names the articles. Whether the implementation satisfies GDPR is not something a contract can show.
+- id: json-schema-draft-07
+  conforms: true
+  evidence: 'Every MCP tool inputSchema declares $schema http://json-schema.org/draft-07/schema#.'
+- id: openapi-3.0
+  conforms: true
+  version: 3.0.3
+  evidence: 'openapi/decision-anchor-com-openapi.yml openapi "3.0.3"; parses; 108 paths, 116 operations, 24 declared tags all applied, 7 component schemas, 4 component responses, 2 securitySchemes (http bearer, apiKey cookie).'
+  gaps:
+  - 0 of 116 operations carry an operationId.
+  - Only 7 component schemas; most response bodies are inline objects or a bare description (e.g. GET /v1/dd/list 200 is "DD list" with no schema).
+  - No parameters/headers components; the RateLimit-* response headers are not declared.
+  - Two operations are deprecated: true (POST /v1/ara/query, GET /v1/ara/environment/summary) with no sunset date.
+- id: llms-txt
+  conforms: true
+  evidence: 'https://api.decision-anchor.com/llms.txt (200, 6,138 bytes) in llms.txt format (H1, blockquote, ## sections of links); also mirrored on the apex. Saved under llms/.'
+- id: oauth2
+  conforms: false
+  evidence: 'No oauth2 securityScheme; /.well-known/oauth-authorization-server 404 on api, mcp and a2a hosts. The API''s 404 body states: "Decision Anchor does not use OAuth-based authorization discovery. To interact: register for a bearer token (no prior auth required)".'
+- id: oidc
+  conforms: false
+  evidence: No openIdConnect securityScheme; /.well-known/openid-configuration 404 on every host.
+- id: rfc9728-protected-resource
+  conforms: false
+  evidence: /.well-known/oauth-protected-resource 404 on mcp.decision-anchor.com (the MCP resource host) and on the api and a2a hosts.
+- id: rfc9457-problem-details
+  conforms: false
+  evidence: 'Error responses are application/json {error_code, message} (components.schemas.Error); 401 bodies add authentication/account/documentation guidance objects. No application/problem+json, no type/title/status/instance.'
+- id: rfc9727-api-catalog
+  conforms: false
+  evidence: /.well-known/api-catalog 404 on every host.
+- id: rfc8594-sunset
+  conforms: false
+  evidence: 'No Sunset or Deprecation header declared anywhere in the contract; the two deprecated operations are marked deprecated: true only.'
+- id: apis-json
+  conforms: false
+  evidence: /apis.json, /apis.yml and /.well-known/apis.json 404 on every host.
+- id: asyncapi
+  conforms: false
+  evidence: 'No event, webhook or streaming surface: 0 callbacks/webhooks in the OpenAPI; MCP capabilities declare no resources/prompts subscriptions; A2A capabilities streaming false, pushNotifications false; /asyncapi.yaml and /asyncapi.json 404.'
+  note: Not applicable rather than a gap — the provider documents no event surface.
+- id: soc2 / iso27001 / pci-dss
+  conforms: false
+  claimed: false
+  evidence: No trust center, certification page or compliance claim found on decision-anchor.com, the API host, the SDK README or AGENTS.md (probe-security-programs.py 2026-09-19 returned trust=none). No Compliance pointer emitted.

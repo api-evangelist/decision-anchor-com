@@ -1,0 +1,194 @@
+generated: '2026-09-19'
+method: searched
+source: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+derived_from: openapi/decision-anchor-com-openapi.yml
+docs:
+- https://api.decision-anchor.com/openapi.json
+- https://api.decision-anchor.com/llms.txt
+- https://decision-anchor.com/changelog/
+base_url: https://api.decision-anchor.com
+media_type: application/json
+api_style: REST-ish RPC over HTTPS (verb-named POST routes such as /v1/dd/create, /v1/dd/confirm); JSON in and out; two other transports (MCP, A2A JSON-RPC) over the same adapter registry
+auth:
+  style: >-
+    Register-then-bearer. POST /v1/agent/register (no auth) issues agent_id, auth_token (da_tk_...) and
+    recovery_key (da_rk_...), shown once. Every agent route takes "Authorization: Bearer <auth_token>" —
+    the Bearer prefix is required (the 401 body says so). Lost tokens are recovered with agent_id +
+    recovery_key at POST /v1/agent/token/recover (5 per 15 min), which replaces both values. The DAP owner
+    portal (/dap/*) uses a session cookie connect.sid after password login instead. No OAuth, no API keys,
+    no OIDC.
+  detail: authentication/decision-anchor-com-authentication.yml
+idempotency:
+  supported: true
+  coverage: partial
+  mechanism: request_id (UUID v4) in the JSON request body, scoped to the calling agent_id
+  header: null
+  scope:
+  - 'POST /v1/dd/create'
+  - 'POST /v1/dd/bilateral/propose'
+  - 'POST /v1/tsl/purchase'
+  retention: undocumented
+  conflict_behavior: >-
+    Reusing one of YOUR OWN request_id values returns the earlier result instead of creating a new record.
+    The key is scoped to your agent_id, so a value another agent used never returns their record. (AGENTS.md,
+    POST /v1/dd/create step.) Behaviour when the same request_id is reused with a different body is not
+    documented.
+  description: >-
+    Three of the write routes that spend DAC carry a request_id idempotency key: DD create, bilateral propose
+    and TSL purchase (the MCP tools create_decision, propose_bilateral and purchase_tool expose the same
+    argument). POST /v1/agent/register also accepts request_id but the contract says it is "Accepted and
+    ignored ... Registration is not idempotent: every call creates a new agent, whatever value you send."
+    POST /v1/dd/confirm is naturally idempotent-by-state (a second confirm returns 409 ALREADY_CONFIRMED
+    rather than double-settling). The remaining ~30 mutating routes (ISE enter/exit, sDAC start/end, ASA
+    subscribe/extend, TSL register/dependency/revenue-share/transfer, DAP portal writes) document no replay
+    key.
+  gaps:
+  - No retention period for stored request_ids.
+  - No documented response to a reused request_id with a different payload (Stripe-style idempotency_error).
+  - No idempotency key on POST /v1/asa/subscribe or /v1/asa/extend, which are paid ($0.10 base via x402).
+dry_run_mode:
+  supported: true
+  status: documented
+  mechanism: dedicated simulation surface (sDAC) plus the Trial balance
+  surfaces:
+  - operation: 'POST /v1/sdac/session/start -> POST /v1/sdac/trial -> POST /v1/sdac/session/end'
+    cost: 'a fraction of the real cost ("Not a free simulation"); session end is trial-eligible'
+    description: >-
+      "sDAC (simulated DAC): An identical-physics environment with accountability removed. The same cost
+      function as the real cost structure applies, and a fraction (ratio-based) of the cost is actually paid.
+      ... sDAC usage history does not leave accountability records in Core." Prices an EE combination without
+      creating a DD. MCP tools create_sdac_session / run_sdac_trial / end_sdac_session.
+  - operation: 'GET /v1/dd/create (GET on the POST route)'
+    cost: free, no auth
+    description: Returns a working minimal call (how_to_call + curl_example) and the route's payment terms without doing anything.
+  - operation: 'GET /v1/pricing/current, GET /v1/pricing/ee-presets'
+    cost: free, no auth
+    description: Full cost formula and preset totals, so a client can compute the DAC of any EE before declaring.
+  detail: sandbox/decision-anchor-com-sandbox.yml
+reversibility:
+  grade: verified
+  docs: https://api.decision-anchor.com/openapi.json
+  note: >-
+    The core record — a confirmed Decision Declaration — is irreversible BY DESIGN and the provider says so
+    ("a record once fixed cannot be undone", apex homepage; DD is "append-only, tamper-evident", llms.txt).
+    That is the product, not a gap. Around it several write surfaces do have reversal paths, and two of them
+    state a window in the contract itself: portal account deletion (restore within the 30-day grace period)
+    and DD confirmation (a created-but-unconfirmed externally-paid DD lapses after 30 minutes and is never
+    settled). Those two carry a stated window, so the file grades verified; nothing below asserts a window
+    the provider has not written down.
+  write_surfaces:
+  - operation: 'POST /v1/dd/create -> POST /v1/dd/confirm'
+    action: Anchor a decision boundary, then settle it
+    reversal: none after confirm; before confirm, simply do not confirm
+    reversal_operation: null
+    window: '30 minutes (externally paid records): "When the record is charged to external payment, confirm within 30 minutes of creation. After that the payment reservation is released and the record can no longer be confirmed." Trial-covered records have no window.'
+    grade: verified
+    note: An unconfirmed record "stays unsettled and has no usage entry". A confirmed record is permanent for its retention period (90 days to 10 years by EE axis) and then "converted to de-identified statistics". There is no delete, void or cancel for a settled DD, and the provider states that as the point of the service.
+  - operation: 'POST /v1/dd/bilateral/propose -> POST /v1/dd/bilateral/{agreement_id}/respond'
+    action: Propose a two-party declaration
+    reversal: 'the counterparty may reject (accept: false)'
+    reversal_operation: 'POST /v1/dd/bilateral/{agreement_id}/respond'
+    window: null
+    grade: documented
+    note: No expiry for an unanswered proposal is stated, and no withdraw-by-proposer route exists.
+  - operation: 'DELETE /dap/account'
+    action: Request deletion of a DAP owner account (GDPR Art. 17)
+    reversal: restore
+    reversal_operation: 'POST /dap/account/restore'
+    window: '30-day grace period — "Request account deletion (30-day grace period, GDPR Art. 17)" / "Restore account within the deletion grace period"; GET /dap/account/deletion-status reports where you are.'
+    grade: verified
+  - operation: 'POST /v1/asa/subscribe, POST /v1/asa/extend'
+    action: Buy / extend an Agent State Archive subscription ($0.10 base via x402 or Earned DAC)
+    reversal: cancel
+    reversal_operation: 'DELETE /v1/asa/subscribe (and owner-side DELETE /dap/asa/subscription/{agent_id})'
+    window: null
+    grade: documented
+    note: 'The 200 description reads "Subscription cancelled (non-refundable)". Cancellation stops renewal; it does not refund.'
+  - operation: 'POST /v1/tsl/tool/{tool_id}/transfer-declaration'
+    action: Declare transfer of a TSL tool
+    reversal: cancel
+    reversal_operation: 'DELETE /v1/tsl/tool/{tool_id}/transfer-declaration'
+    window: null
+    grade: documented
+  - operation: 'POST /v1/ise/enter'
+    action: Enter the Idle State Environment (a charged stay is anchored on exit)
+    reversal: exit
+    reversal_operation: 'POST /v1/ise/exit'
+    window: null
+    grade: documented
+    note: Exiting settles the stay; it does not un-record it.
+  - operation: 'PUT /dap/dab/set'
+    action: Set an agent's external-DAC spending cap
+    reversal: remove
+    reversal_operation: 'DELETE /dap/dab/remove'
+    window: null
+    grade: documented
+  - operation: 'POST /v1/tsl/purchase, POST /v1/tsl/purchase/layer2'
+    action: Buy a TSL tool (x402)
+    reversal: none documented
+    reversal_operation: null
+    window: null
+    grade: none
+  - operation: 'POST /v1/agent/token/rotate, POST /v1/agent/token/recover'
+    action: Replace credentials
+    reversal: none (old values immediately invalid)
+    reversal_operation: null
+    window: null
+    grade: none
+pagination:
+  style: offset and page (mixed)
+  request_params:
+    offset_style: 'limit + offset on GET /v1/dd/list, GET /v1/earned-dac/ledger (from/to date filters on dd/list)'
+    page_style: 'limit + page on GET /v1/tsl/tools (plus layer, status) and GET /v1/dur/transactions (plus from, to, type)'
+  response_fields: not declared — list 200 responses are description-only in the contract (e.g. "DD list")
+  cursor: false
+  note: The MCP list_decisions tool mirrors from/to/limit/offset exactly.
+field_expansion:
+  supported: false
+  note: No expand/include/fields parameter anywhere. Lineage is a separate call (GET /v1/dd/{dd_id}/lineage).
+metadata:
+  supported: true (structured, not free-form)
+  mechanism: 'content_inclusion_flag = 1 attaches a 7-dimension TemplateInput (decision_class, decision_scale_value + decision_scale_unit, target_class, call_chain, self_classification, decision_trigger, human_involvement); every dimension is a constrained enum or typed field'
+  limits: '"never free text ... do not try to send summaries or free-text descriptions anywhere else"; an owner policy may force always_branch_0 / always_branch_1'
+request_tracing:
+  request_id_header: null
+  note: No request-id or trace header is declared or observed. Records are traced by dd_id / ee_id (UUIDs) and the integrity_hash (sha256) returned on confirm.
+versioning:
+  scheme: uri-path /v1 for agent routes; /dap routes unversioned
+  current: v1 (release 1.3.42, declared identically by the OpenAPI, the x-da-spec-version header, MCP serverInfo and the agent card)
+  detail: lifecycle/decision-anchor-com-lifecycle.yml
+  changelog: changelog/decision-anchor-com-changelog.yml
+error_envelope:
+  media_type: application/json
+  rfc9457: false
+  shape: '{ "error_code": "UPPER_SNAKE", "message": "prose with the next step" } — 401 adds authentication{...}/account{...}/documentation; 402 is an x402 v2 challenge object'
+  detail: errors/decision-anchor-com-problem-types.yml
+rate_limits:
+  signal_headers: [RateLimit-Limit, RateLimit-Policy, RateLimit-Remaining, RateLimit-Reset]
+  observed: 'ratelimit-limit: 100; ratelimit-policy: 100;w=60; ratelimit-remaining: 98; ratelimit-reset: 58 (2026-09-19, unauthenticated GET /v1/pricing/current)'
+  signal_status: 429
+  detail: rate-limits/decision-anchor-com-rate-limits.yml
+payments:
+  protocol: x402 v2 (HTTP 402)
+  challenge_header: PAYMENT-REQUIRED (base64; body is a copy)
+  retry_header: Payment-Signature (X-PAYMENT, the v1 name, is rejected as unpaid)
+  asset: USDC on Base (eip155:8453) via the Coinbase facilitator
+  discovery: https://api.decision-anchor.com/.well-known/x402.json
+  balances: 'Trial (500 DAC / 30 days, three routes only), External (USDC per call, capped by owner-set DAB), Earned (TSL revenue; internal-only, min_spend 30, 365-day expiry)'
+  detail: plans/decision-anchor-com-plans-pricing.yml
+webhooks:
+  supported: false
+  note: No callbacks, webhooks or event stream anywhere; A2A pushNotifications false. The MCP registry entry and the SDK topics both say mcp-server, not events.
+other_conventions:
+  - name: Case
+    detail: 'Every enum is lowercase EXCEPT selection_state (SELECTED/REJECTED/ABORTED/SILENT/NON_DECISION) — "the only one of seventeen that uses uppercase notation" (changelog 2026-08-29).'
+  - name: GET on a POST route
+    detail: Returns a guidance document (how_to_call, curl_example, payment terms) rather than 405 — the routes teach their own use.
+  - name: Undefined fields
+    detail: Refused with 400 UNKNOWN_FIELD, never silently discarded.
+  - name: Timestamps
+    detail: ISO 8601; decision_at is normalised to UTC server-side and enters the integrity hash.
+  - name: Identifiers
+    detail: UUIDs for agent_id, dd_id, ee_id, session_id, tool_id, agreement_id; credential prefixes da_tk_ (auth token) and da_rk_ (recovery key).
+  - name: Locale
+    detail: 'Machine-readable surfaces are English; some human labels are Korean (ee-presets display_name "기본/표준/고책임"; the company signs as 디시전앵커). security.txt Preferred-Languages: en, ko.'

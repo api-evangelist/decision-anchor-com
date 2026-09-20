@@ -1,0 +1,53 @@
+generated: '2026-09-19'
+method: searched
+source: https://github.com/zse4321/decision-anchor-sdk
+docs: https://github.com/zse4321/decision-anchor-sdk#installation
+package_count: 1
+official_count: 1
+summary: >-
+  Decision Anchor ships ONE first-party client library, a zero-dependency Node.js SDK, and distributes it
+  by git clone only — package.json carries "private": true and the package is absent from npm (and from
+  PyPI, and from any other registry). It is unmistakably first-party: the apex homepage's JSON-LD lists it as
+  the WebAPI's SoftwareSourceCode, llms.txt calls it "Node.js SDK with 17 API groups and 80+ methods", the
+  agent card's documentationUrl and the MCP discovery document both point into it, and the MCP registry entry
+  names it as the server's repository. The same repository holds the AGENTS.md guide and framework examples
+  (LangGraph, CrewAI) that connect to the remote MCP server rather than wrap the REST API.
+packages:
+  - language: javascript
+    runtime: Node.js >= 18 (native fetch; no dependencies)
+    registry: github
+    name: decision-anchor-sdk
+    url: https://github.com/zse4321/decision-anchor-sdk
+    install: 'git clone https://github.com/zse4321/decision-anchor-sdk.git && const DecisionAnchor = require("./src/index")'
+    official: true
+    license: MIT
+    version: 1.5.0
+    published: null
+    version_source: package.json on main (private:true); read 2026-09-19
+    last_commit: '2026-09-15'
+    repository_created: '2026-04-02'
+    api_groups: 17 (per llms.txt); 81 async methods in src/index.js
+    note: >-
+      Not published to any registry, so there is no registry release date: version 1.5.0 is the package.json
+      value on the default branch and last_commit is the most recent push (docs commits on 2026-09-15). No
+      git tags or GitHub releases exist. The README states the SDK never handles payments or private keys —
+      on HTTP 402 it throws PaymentRequiredError carrying the decoded x402 v2 challenge and the caller retries
+      with a PAYMENT-SIGNATURE header using its own wallet tooling.
+    examples:
+      - examples/basic-dd.js
+      - examples/ara-observe.js
+      - examples/tsl-market.js
+      - examples/x402-da-anchoring.js
+searched:
+  - {registry: npm, query: 'https://registry.npmjs.org/decision-anchor-sdk', result: '{"error":"Not found"}'}
+  - {registry: npm, query: 'https://registry.npmjs.org/decision-anchor', result: '{"error":"Not found"}'}
+  - {registry: npm, query: 'https://registry.npmjs.org/@decision-anchor/sdk', result: '{"error":"Not found"}'}
+  - {registry: npm, query: 'https://registry.npmjs.org/-/v1/search?text=decision-anchor&size=10', result: 0 matching packages (all hits unrelated)}
+  - {registry: pypi, query: 'https://pypi.org/pypi/decision-anchor/json', status: 404}
+  - {registry: pypi, query: 'https://pypi.org/pypi/decision-anchor-sdk/json', status: 404}
+  - {registry: github, query: 'https://api.github.com/repos/zse4321/decision-anchor-sdk', result: 'JavaScript, MIT, 1 star, pushed 2026-09-15, topics include mcp-server, x402, usdc, ai-agent'}
+  - {registry: github-user, query: 'https://api.github.com/users/zse4321/repos', result: 'a personal account; decision-anchor-sdk is the only original repository, the rest are forks of awesome-mcp-servers / x402 lists and CrewAI/LangChain examples'}
+  - {registry: mcp-registry, query: 'https://registry.modelcontextprotocol.io/v0.1/servers?search=decision-anchor', result: 'com.decision-anchor/da listed (remote streamable-http), repository = this SDK repo; no stdio package'}
+not_packages:
+  - {path: 'examples/langgraph-da-integration.py', note: 'Python example script using langchain-mcp-adapters against the remote MCP server; not a library'}
+  - {path: 'examples/crewai-da-integration.py', note: 'Python example script using crewai-tools MCPServerAdapter; not a library'}

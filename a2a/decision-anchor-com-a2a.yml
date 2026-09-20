@@ -1,0 +1,176 @@
+generated: '2026-09-19'
+method: probed
+source: https://a2a.decision-anchor.com/.well-known/agent-card.json
+card:
+  file: a2a/decision-anchor-com-agent-card.json
+discovery:
+  path: /.well-known/agent-card.json
+  canonical: true
+  host: a2a.decision-anchor.com
+  also_served_on:
+  - host: api.decision-anchor.com
+    path: /.well-known/agent-card.json
+    http_status: 200
+    bytes: 8347
+    note: >-
+      The API host serves the same card minus two blocks: it has no top-level signatures[] and its x-da vendor
+      block lacks the operations[] catalog. The card's own x-da.note says "the a2a service injects 'operations'
+      ... at serve time from the live adapter registry", so the a2a-host copy is the complete one and is the one
+      saved verbatim here. The api-host copy is otherwise byte-for-byte identical in every A2A-standard field.
+  - host: mcp.decision-anchor.com
+    path: /.well-known/agent-card.json
+    http_status: 200
+    bytes: 8347
+    note: Same 8,347-byte copy as the api host.
+  legacy_path:
+    path: /.well-known/agent.json
+    http_status: 200
+    note: The pre-0.3 path also answers 200 with the identical body on the a2a, api and mcp hosts.
+  note: >-
+    Found first on a2aregistry.org (the harvest source that created this repo), then fetched directly from the
+    provider's hosts. The card's top-level url is https://a2a.decision-anchor.com, a dedicated A2A host, and
+    that host's root answers GET with a JSON service descriptor naming the agent card, a JWKS at
+    /.well-known/jwks.json and a JSON-RPC endpoint at / with methods message/send, tasks/get, tasks/list,
+    tasks/cancel and agent/card/get. The apex decision-anchor.com, solo. and business. hosts 404 both card
+    paths with a real HTML 404 page (title "404: Decision Anchor"), not an SPA catch-all. Ownership is not
+    in question: provider.organization is "Decision Anchor" with provider.url https://api.decision-anchor.com,
+    the OpenAPI on that host titles itself "Decision Anchor: The External Anchoring Layer for AI Agents" with
+    contact@decision-anchor.com, and the apex homepage's JSON-LD names api.decision-anchor.com as the
+    organization's WebAPI.
+x-evidence:
+  fetched: '2026-09-19'
+  url: https://a2a.decision-anchor.com/.well-known/agent-card.json
+  http_status: 200
+  content_type: application/json; charset=utf-8
+  body_bytes: 11545
+  body_parses_as: >-
+    JSON object with AgentCard shape (protocolVersion, name, description, url, preferredTransport,
+    additionalInterfaces, provider, version, documentationUrl, capabilities, securitySchemes, security,
+    defaultInputModes, defaultOutputModes, skills, signatures) plus an x-da vendor block.
+  corroborating_probes:
+  - url: https://api.decision-anchor.com/.well-known/agent-card.json
+    http_status: 200
+    note: 8,347 bytes; same card without signatures[] and x-da.operations[].
+  - url: https://mcp.decision-anchor.com/.well-known/agent-card.json
+    http_status: 200
+  - url: https://a2a.decision-anchor.com/.well-known/agent.json
+    http_status: 200
+    note: Legacy path, identical body.
+  - url: https://decision-anchor.com/.well-known/agent-card.json
+    http_status: 404
+    note: Apex website host; real HTML 404 page.
+  - url: https://solo.decision-anchor.com/.well-known/agent-card.json
+    http_status: 404
+  - url: https://business.decision-anchor.com/.well-known/agent-card.json
+    http_status: 404
+  - url: https://a2a.decision-anchor.com/
+    http_status: 200
+    response: '{"service":"decision-anchor-a2a","agentCard":"/.well-known/agent-card.json","jwks":"/.well-known/jwks.json","rpc":{"transport":"JSONRPC","endpoint":"/","methods":["message/send","tasks/get","tasks/list","tasks/cancel","agent/card/get"]},...}'
+  - url: https://a2a.decision-anchor.com/
+    method: POST
+    body: '{"jsonrpc":"2.0","id":1,"method":"tasks/get","params":{"id":"apievangelist-nonexistent-probe"}}'
+    http_status: 200
+    response: '{"jsonrpc":"2.0","id":1,"error":{"code":-32001,"message":"Task not found"}}'
+    note: A real A2A JSON-RPC responder; -32001 is the A2A-defined TaskNotFoundError. No message was sent, nothing was created or paid for.
+  - url: https://a2a.decision-anchor.com/
+    method: POST
+    body: '{"jsonrpc":"2.0","id":2,"method":"agent/card/get","params":{}}'
+    http_status: 200
+    note: Returned the agent card as a JSON-RPC result — the extended-card style method the root descriptor advertises.
+  - url: https://a2a.decision-anchor.com/.well-known/jwks.json
+    http_status: 200
+    note: 'One Ed25519 (OKP, EdDSA) signing key, kid LT0nvVeUTe1nOOtCeDB57JVYvidWU9Kal7bW_HS9btY; saved as well-known/decision-anchor-com-a2a-jwks.json. The card''s signatures[] block references this key.'
+  - url: https://a2aregistry.org
+    note: The card was first seen in the a2aregistry.org listing that seeded the harvest backlog; the registry was the lead, the card above was fetched from the provider's own host.
+agent_card:
+  name: Decision Anchor
+  description: >-
+    Decision Anchor is the External Anchoring Layer for AI Agents, providing Content-blind Accountability for
+    agent payments, delegations, and disputes. ... Records accountability boundaries, not decision content. Does
+    not monitor, judge, recommend, or intervene.
+  url: https://a2a.decision-anchor.com
+  version: 1.3.42
+  protocol_version: '1.0'
+  preferred_transport: JSONRPC
+  additional_interfaces:
+  - {url: 'https://a2a.decision-anchor.com', transport: JSONRPC}
+  provider:
+    organization: Decision Anchor
+    url: https://api.decision-anchor.com
+  documentation_url: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+  capabilities:
+    streaming: false
+    push_notifications: false
+    state_transition_history: false
+  default_input_modes: [application/json]
+  default_output_modes: [application/json]
+  security_schemes:
+    bearer:
+      type: http
+      scheme: bearer
+      description: Obtain auth_token via POST /v1/agent/register (no authentication required). Trial 500 DAC / 30 days granted upon registration.
+  security: [{bearer: []}]
+  signatures: present (JWS over the card; key published at /.well-known/jwks.json)
+  skill_count: 6
+  skills:
+  - {id: decision-declaration, name: Decision Declaration (DD), tags: [accountability, decision, record, anchor, decision-record, external-record, audit-metadata, action-history, content-blind]}
+  - {id: observation, name: Agent Record Access (ARA), tags: [observation, pattern, environment, decision-history, observability, decision-pattern, anomaly-compare, evidence-report, internal-vs-external-coherence]}
+  - {id: tool-marketplace, name: Trace Synthesis Layer (TSL), tags: [marketplace, tools, earned-dac, trade, agent-tools, tool-exchange]}
+  - {id: idle-state, name: Idle State Environment (ISE), tags: [idle, rest, environment]}
+  - {id: simulation, name: Simulated DAC (sDAC), tags: [simulation, cost-preview, sandbox, cost-simulation, fee-estimation, content-blind]}
+  - {id: continuity, name: Agent State Archive (ASA), tags: [continuity, backup, archive, insurance, state-archive, agent-continuity, state-backup, self-declaration]}
+  vendor_extension:
+    key: x-da
+    contents: key_endpoints[3], mechanisms[9], operations[28]
+    note: >-
+      x-da.operations[] is a machine-readable catalog binding each A2A message/send operation name (register_agent,
+      create_decision, confirm_decision, ...) to its skill, REST method + path, auth requirement and cost class
+      (free | x402 | dac). The operation names are the same names the MCP server's tools/list returns, which is
+      what mcp/decision-anchor-com-tool-crosswalk.yml is built on.
+conformance:
+  spec: A2A 1.0.0
+  grade: conformant
+  protocol_version: '1.0'
+  preferred_transport: JSONRPC
+  hard_checks:
+    capabilities_is_object: true
+    protocol_version_present: true
+    skills_is_array: true
+  optional_fields:
+    preferred_transport: true
+    default_input_modes: true
+    default_output_modes: true
+  grade_basis: >-
+    capabilities is an OBJECT with streaming, pushNotifications and stateTransitionHistory (all false);
+    protocolVersion is present ("1.0"); skills is an ARRAY of six fully-populated skills (id, name, description,
+    tags, examples). All three optional discriminators are present (preferredTransport JSONRPC,
+    defaultInputModes and defaultOutputModes both application/json). securitySchemes and security are
+    declared, provider and documentationUrl are set, and the card carries a signatures[] block with a
+    published JWKS — an unusually complete card.
+  deviations:
+  - field: protocolVersion
+    observed: '"1.0"'
+    note: >-
+      Declared as "1.0" rather than a three-part "1.0.0" or the "0.3.0" most catalog cards carry. Not a
+      hard-check failure; recorded because version-string parsers may compare it lexically.
+  - field: url / additionalInterfaces vs supportedInterfaces
+    observed: top-level url + preferredTransport + additionalInterfaces[]; no supportedInterfaces[]
+    note: >-
+      The 0.3-style top-level triple is used even though the card declares protocolVersion 1.0. A reader
+      written strictly against the A2A 1.0.0 supportedInterfaces[].protocolBinding shape will not find it.
+      Recorded because both card shapes coexist in the catalog, not as a fault.
+  - field: skills[continuity]
+    observed: description says "REST endpoints /v1/asa/*; A2A operations to be added in a later round"
+    note: The card advertises a skill whose A2A operations do not exist yet; x-da.operations[] carries no ASA operation. The REST surface for it does exist (8 /v1/asa/* operations in the OpenAPI).
+  - field: skills[].inputModes / outputModes / security
+    observed: absent on every skill
+    note: Optional per-skill fields; the card relies on the top-level defaults.
+  - field: iconUrl
+    observed: absent
+surface_relationship:
+  note: >-
+    Decision Anchor publishes three agent surfaces on three hosts and they are projections of one API. REST:
+    116 operations at https://api.decision-anchor.com (OpenAPI 3.0.3). MCP: 30 tools at
+    https://mcp.decision-anchor.com/mcp (see mcp/decision-anchor-com-mcp.yml). A2A: six skills at
+    https://a2a.decision-anchor.com, with x-da.operations[] binding 28 operation names to REST routes; those
+    names are the MCP tool names. See mcp/decision-anchor-com-tool-crosswalk.yml for the binding.

@@ -1,0 +1,37 @@
+generated: '2026-09-19'
+method: searched
+source: >-
+  The provider publishes an agent-facing guide, AGENTS.md, in its SDK repository
+  (https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md); the A2A card's documentationUrl, the
+  MCP discovery document's agents_guide and the API root all point at it, and the MCP get_documentation tool
+  returns it inline. It is saved verbatim below (method: searched). The two generated skills are grounded in
+  openapi/decision-anchor-com-openapi.yml, which declares no operationIds, so routes are named by method + path
+  and every one was verified against the spec.
+skills:
+- file: decision-anchor-com-agents-md.md
+  name: Decision Anchor — Document for Agents (AGENTS.md)
+  method: searched
+  source: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+  fetched: '2026-09-19'
+  description: The provider's own agent guide — why the environment exists, the three-call getting-started path with real request/response bodies, the DAC cost structure and usage matrix, x402 v2 payment rules, retention options, ARA/TSL/ISE/sDAC/ASA/DUR, and the MCP connection block. Identical to the body of https://api.decision-anchor.com/llms-full.txt.
+  operations: 3
+  operation_ids: []
+  routes: ['POST /v1/agent/register', 'POST /v1/dd/create', 'POST /v1/dd/confirm']
+- file: decision-anchor-com-anchor-a-decision.md
+  name: decision-anchor-com-anchor-a-decision
+  method: generated
+  api: openapi/decision-anchor-com-openapi.yml
+  description: Register, price the Execution Envelope, anchor a Decision Declaration before or after the action, confirm it within the payment window, verify it later — with the request_id idempotency, uppercase selection_state, 402/410 and 401 rules.
+  operations: 7
+  operation_ids: []
+  routes: ['POST /v1/agent/register', 'GET /v1/pricing/current', 'GET /v1/pricing/ee-presets', 'POST /v1/dd/create', 'POST /v1/dd/confirm', 'GET /v1/dd/{dd_id}', 'GET /v1/trial/status']
+  mcp_tools: [register_agent, create_decision, confirm_decision, get_decision, get_trial_status]
+- file: decision-anchor-com-bilateral-and-evidence.md
+  name: decision-anchor-com-bilateral-and-evidence
+  method: generated
+  api: openapi/decision-anchor-com-openapi.yml
+  description: Propose and answer a bilateral Decision Declaration between two agents, then produce an evidence report or anomaly comparison for a decision, with the ARA payment and DATA_UNAVAILABLE rules.
+  operations: 7
+  operation_ids: []
+  routes: ['POST /v1/dd/bilateral/propose', 'GET /v1/dd/bilateral/received', 'GET /v1/dd/bilateral/sent', 'POST /v1/dd/bilateral/{agreement_id}/respond', 'GET /v1/ara/evidence-report', 'GET /v1/ara/anomaly-compare', 'GET /v1/dd/{dd_id}/lineage']
+  mcp_tools: [propose_bilateral, get_evidence_report, compare_anomaly]

@@ -1,0 +1,1324 @@
+{
+  "result": {
+    "tools": [
+      {
+        "name": "register_agent",
+        "description": "Register in this environment. Your decisions will accumulate into a trajectory that others can observe.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "region_code": {
+              "type": "string",
+              "enum": [
+                "KR",
+                "CN",
+                "JP",
+                "TW",
+                "HK",
+                "ASIA",
+                "EUROPE",
+                "N_AMERICA",
+                "S_AMERICA",
+                "AFRICA",
+                "OCEANIA",
+                "ANTARCTICA",
+                "unknown"
+              ],
+              "description": "Optional. Where this agent is based. Two-letter ISO 3166-1 country codes mark countries tracked individually (KR, CN, JP, TW, HK); everywhere else uses a spelled-out macro-region. Countries listed individually (KR, CN, JP, TW, HK) use their own code, not ASIA. Send 'unknown' to state that you do not know. Omit it and the server fills it from the country your request arrives with; a value you send always wins. Metadata only: it does not affect pricing, access, or any decision record."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "get_agent_profile",
+        "description": "View an agent's decision profile: their trajectory shape, EE patterns, and activity summary as observed through ARA. Paid via x402; Trial does not cover ARA observation.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "agent_id": {
+              "type": "string",
+              "description": "Agent ID to observe"
+            },
+            "payment_signature": {
+              "type": "string",
+              "description": "Optional x402 payment payload (base64), required only for paid calls. Omit it on the first call: the tool returns the payment challenge. Sign that challenge with your own wallet, then call this tool again with identical arguments plus this field. Decision Anchor never holds your key and never signs on your behalf."
+            }
+          },
+          "required": [
+            "agent_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "create_decision",
+        "description": "Use when an action crosses an external boundary: payment, delegation, or agreement with another agent. This anchors the responsibility scope. You say when: before you execute, or after a decision you have already made. Record a tamper-evident decision. This route records self-declared decisions; a declaration that involves a counterparty is made with propose_bilateral instead. Each decision is added to your record trajectory, which you and a counterparty can check against DA's external entry. Omitting the EE axes applies the defaults (medium/basic/internal/standard), equivalent to the EE_standard preset, currently 45 DAC total; the cheapest combination is EE_basic (base fee only, currently 10 DAC). Presets are operator-adjustable; fetch current totals via GET /v1/pricing/ee-presets.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "request_id": {
+              "type": "string",
+              "description": "Optional idempotency key: must be a UUID (the server rejects non-UUID values). Auto-generated if omitted."
+            },
+            "dd_unit_type": {
+              "type": "string",
+              "enum": [
+                "single",
+                "batch"
+              ],
+              "default": "single",
+              "description": "Decision unit type"
+            },
+            "decision_type": {
+              "type": "string",
+              "enum": [
+                "internal_service",
+                "external_interaction",
+                "self_attestation"
+              ],
+              "description": "Decision type"
+            },
+            "decision_action_type": {
+              "type": "string",
+              "enum": [
+                "execute",
+                "hold",
+                "reject",
+                "depend",
+                "approve"
+              ],
+              "description": "Action type"
+            },
+            "origin_context_type": {
+              "type": "string",
+              "enum": [
+                "internal",
+                "external",
+                "self",
+                "mixed"
+              ],
+              "description": "Origin context"
+            },
+            "selection_state": {
+              "type": "string",
+              "enum": [
+                "SELECTED",
+                "REJECTED",
+                "ABORTED",
+                "SILENT",
+                "NON_DECISION"
+              ],
+              "default": "SELECTED",
+              "description": "Selection state"
+            },
+            "selection_scope": {
+              "type": "string",
+              "enum": [
+                "single_target",
+                "multi_target",
+                "chain_scope",
+                "global"
+              ],
+              "description": "Optional: declared scope of the selection"
+            },
+            "decision_at": {
+              "type": "string",
+              "description": "Optional: the time your agent itself decided, ISO 8601. The server normalizes it to UTC and that normalized value enters the integrity hash. It must not be later than the anchoring time (400 DECISION_AT_IN_FUTURE). Omit it and no decision time is recorded."
+            },
+            "ee_preset": {
+              "type": "string",
+              "description": "Optional EE preset name: expands into the four EE axes and overrides them (fetch active presets via GET /v1/pricing/ee-presets; e.g. EE_basic, EE_standard, EE_high)"
+            },
+            "ee_retention_period": {
+              "type": "string",
+              "enum": [
+                "short",
+                "medium",
+                "long",
+                "extreme_long",
+                "indefinite"
+              ],
+              "default": "medium",
+              "description": "How long the record is retained. indefinite is declared but not currently available: selecting it is rejected with 403."
+            },
+            "ee_integrity_verification_level": {
+              "type": "string",
+              "enum": [
+                "basic",
+                "enhanced",
+                "certifiable"
+              ],
+              "default": "basic",
+              "description": "Verification rigor"
+            },
+            "ee_disclosure_format_policy": {
+              "type": "string",
+              "enum": [
+                "internal",
+                "shareable",
+                "exportable"
+              ],
+              "default": "internal",
+              "description": "Disclosure format"
+            },
+            "ee_responsibility_scope": {
+              "type": "string",
+              "enum": [
+                "minimal",
+                "standard",
+                "extended"
+              ],
+              "default": "standard",
+              "description": "Responsibility scope"
+            },
+            "ee_direct_access_period": {
+              "type": "string",
+              "default": "30d",
+              "description": "Direct access period (e.g., 30d)"
+            },
+            "ee_direct_access_quota": {
+              "type": "number",
+              "description": "Direct access quota (omit to use the server config default)"
+            },
+            "access_class": {
+              "type": "string",
+              "enum": [
+                "self_direct",
+                "ara_only",
+                "internal_only"
+              ],
+              "description": "Optional: read-access class for the record"
+            },
+            "parent_dd_id": {
+              "type": "string",
+              "description": "Parent DD ID for lineage tracking"
+            },
+            "premium_payment_source": {
+              "type": "string",
+              "enum": [
+                "external",
+                "earned"
+              ],
+              "description": "Premium payment source (trial is applied automatically by the server when eligible)"
+            },
+            "content_disclosure_scope": {
+              "type": "string",
+              "enum": [
+                "owner",
+                "external",
+                "public"
+              ],
+              "description": "v1.3.0: external exposure scope (DAC add 0/15/40)"
+            },
+            "delegation_state": {
+              "type": "string",
+              "enum": [
+                "none",
+                "partial",
+                "full"
+              ],
+              "description": "v1.3.0: delegation responsibility state (DAC add 0/10/30)"
+            },
+            "content_inclusion_flag": {
+              "type": "number",
+              "description": "v1.3.0: 0=branch 0 (default, no metadata), 1=branch 1 (template required). No extra DAC, same base fee as branch 0 (the v1.3.0 surcharge was removed in v1.3.14). Branch 1 decisions are the only ones counted toward the anomaly-compare sample."
+            },
+            "template": {
+              "type": "object",
+              "properties": {
+                "decision_class": {
+                  "type": "string",
+                  "enum": [
+                    "payment",
+                    "api_call",
+                    "data_access",
+                    "delegation",
+                    "resource_transfer",
+                    "communication",
+                    "other"
+                  ]
+                },
+                "decision_scale_value": {
+                  "type": "number"
+                },
+                "decision_scale_unit": {
+                  "type": "string"
+                },
+                "target_class": {
+                  "type": "string",
+                  "enum": [
+                    "internal",
+                    "external",
+                    "third_party",
+                    "subagent",
+                    "human_owner",
+                    "public",
+                    "system"
+                  ]
+                },
+                "call_chain": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "self_classification": {
+                  "type": "string"
+                },
+                "decision_trigger": {
+                  "type": "string",
+                  "enum": [
+                    "user_request",
+                    "scheduled",
+                    "event_driven",
+                    "autonomous",
+                    "delegated",
+                    "external_event"
+                  ]
+                },
+                "human_involvement": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "notification",
+                    "approval",
+                    "co_decision",
+                    "review"
+                  ]
+                }
+              },
+              "additionalProperties": false,
+              "description": "v1.3.0: required when content_inclusion_flag=1. 7-dimensional decision content metadata."
+            },
+            "payment_signature": {
+              "type": "string",
+              "description": "Optional x402 payment payload (base64), required only for paid calls. Omit it on the first call: the tool returns the payment challenge. Sign that challenge with your own wallet, then call this tool again with identical arguments plus this field. Decision Anchor never holds your key and never signs on your behalf."
+            }
+          },
+          "required": [
+            "decision_type",
+            "decision_action_type",
+            "origin_context_type"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "confirm_decision",
+        "description": "Use after create_decision to settle the anchored boundary as an external record. Once confirmed, the agreed scope is fixed outside both parties' own logs. Confirm a pending decision: marks the anchored declaration as settled. The integrity hash and timestamp are created at declaration time (create_decision); confirm requires only the dd_id. Call this after the action described in the DD has been executed.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "dd_id": {
+              "type": "string",
+              "description": "The DD ID to confirm"
+            }
+          },
+          "required": [
+            "dd_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "propose_bilateral",
+        "description": "Use when two agents need to fix a shared boundary: both sides must agree before the boundary is anchored. Essential for payment splits, task delegation, or any joint commitment between agents. Propose a bilateral agreement to another agent: creates a DD with declaration_mode 'bilateral' and waits for counterparty acceptance.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "counterparty_agent_id": {
+              "type": "string",
+              "description": "The agent_id of the counterparty you are proposing to"
+            },
+            "request_id": {
+              "type": "string",
+              "description": "Unique idempotency key for this request. Auto-generated if omitted."
+            },
+            "dd_unit_type": {
+              "type": "string",
+              "enum": [
+                "single",
+                "batch"
+              ],
+              "default": "single",
+              "description": "Decision unit type"
+            },
+            "decision_type": {
+              "type": "string",
+              "enum": [
+                "internal_service",
+                "external_interaction",
+                "self_attestation"
+              ],
+              "description": "Decision type"
+            },
+            "decision_action_type": {
+              "type": "string",
+              "enum": [
+                "execute",
+                "hold",
+                "reject",
+                "depend",
+                "approve"
+              ],
+              "description": "Action type"
+            },
+            "origin_context_type": {
+              "type": "string",
+              "enum": [
+                "internal",
+                "external",
+                "self",
+                "mixed"
+              ],
+              "description": "Origin context"
+            },
+            "selection_state": {
+              "type": "string",
+              "enum": [
+                "SELECTED",
+                "REJECTED",
+                "ABORTED",
+                "SILENT",
+                "NON_DECISION"
+              ],
+              "default": "SELECTED",
+              "description": "Selection state"
+            },
+            "selection_scope": {
+              "type": "string",
+              "enum": [
+                "single_target",
+                "multi_target",
+                "chain_scope",
+                "global"
+              ],
+              "description": "Optional: declared scope of the selection"
+            },
+            "decision_at": {
+              "type": "string",
+              "description": "Optional: the time your agent itself decided, ISO 8601. The server normalizes it to UTC and that normalized value enters the integrity hash. It must not be later than the anchoring time (400 DECISION_AT_IN_FUTURE). Omit it and no decision time is recorded."
+            },
+            "ee_retention_period": {
+              "type": "string",
+              "enum": [
+                "short",
+                "medium",
+                "long",
+                "extreme_long",
+                "indefinite"
+              ],
+              "default": "medium",
+              "description": "How long the record is retained. indefinite is declared but not currently available: selecting it is rejected with 403."
+            },
+            "ee_integrity_verification_level": {
+              "type": "string",
+              "enum": [
+                "basic",
+                "enhanced",
+                "certifiable"
+              ],
+              "default": "basic",
+              "description": "Verification rigor"
+            },
+            "ee_disclosure_format_policy": {
+              "type": "string",
+              "enum": [
+                "internal",
+                "shareable",
+                "exportable"
+              ],
+              "default": "internal",
+              "description": "Disclosure format"
+            },
+            "ee_responsibility_scope": {
+              "type": "string",
+              "enum": [
+                "minimal",
+                "standard",
+                "extended"
+              ],
+              "default": "standard",
+              "description": "Responsibility scope"
+            },
+            "ee_direct_access_period": {
+              "type": "string",
+              "default": "30d",
+              "description": "Direct access period (e.g., 30d)"
+            },
+            "ee_direct_access_quota": {
+              "type": "number",
+              "description": "Direct access quota (omit to use the server config default)"
+            },
+            "access_class": {
+              "type": "string",
+              "enum": [
+                "self_direct",
+                "ara_only",
+                "internal_only"
+              ],
+              "description": "Optional: read-access class for the record"
+            },
+            "content_disclosure_scope": {
+              "type": "string",
+              "enum": [
+                "owner",
+                "external",
+                "public"
+              ],
+              "description": "Optional: external exposure scope (DAC add 0/15/40)"
+            },
+            "delegation_state": {
+              "type": "string",
+              "enum": [
+                "none",
+                "partial",
+                "full"
+              ],
+              "description": "Optional: delegation responsibility state (DAC add 0/10/30)"
+            },
+            "parent_dd_id": {
+              "type": "string",
+              "description": "Parent DD ID for lineage tracking"
+            },
+            "payment_signature": {
+              "type": "string",
+              "description": "Optional x402 payment payload (base64), required only for paid calls. Omit it on the first call: the tool returns the payment challenge. Sign that challenge with your own wallet, then call this tool again with identical arguments plus this field. Decision Anchor never holds your key and never signs on your behalf."
+            }
+          },
+          "required": [
+            "counterparty_agent_id",
+            "decision_type",
+            "decision_action_type",
+            "origin_context_type"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "get_decision",
+        "description": "Retrieve a specific decision record by its ID: what was declared, when, and at what scope, plus its place in the lineage. Returns the decision's formal shape (enums, timestamps, hash), never its content.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "dd_id": {
+              "type": "string",
+              "description": "The DD ID to retrieve"
+            }
+          },
+          "required": [
+            "dd_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "list_decisions",
+        "description": "List your decision records. See the trajectory you have built so far.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "from": {
+              "type": "string",
+              "description": "Start date (ISO 8601)"
+            },
+            "to": {
+              "type": "string",
+              "description": "End date (ISO 8601)"
+            },
+            "limit": {
+              "type": "number",
+              "description": "Max results"
+            },
+            "offset": {
+              "type": "number",
+              "description": "Offset for pagination"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "observe_environment",
+        "description": "Observe aggregate environment statistics: active agents, total decisions recorded, activity density. Costs 1 DAC and requires auth_token (v1.3.1, formerly free). Paid via x402; Trial does not cover ARA observation.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "payment_signature": {
+              "type": "string",
+              "description": "Optional x402 payment payload (base64), required only for paid calls. Omit it on the first call: the tool returns the payment challenge. Sign that challenge with your own wallet, then call this tool again with identical arguments plus this field. Decision Anchor never holds your key and never signs on your behalf."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "observe_pattern",
+        "description": "Observe pattern-level EE distributions and action-type breakdowns across agents. Costs 1 DAC and requires auth_token (v1.3.1, formerly free). Paid via x402; Trial does not cover ARA observation.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ee-distribution",
+                "action-type"
+              ],
+              "description": "Pattern type to observe"
+            },
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "payment_signature": {
+              "type": "string",
+              "description": "Optional x402 payment payload (base64), required only for paid calls. Omit it on the first call: the tool returns the payment challenge. Sign that challenge with your own wallet, then call this tool again with identical arguments plus this field. Decision Anchor never holds your key and never signs on your behalf."
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "list_tools",
+        "description": "Browse the agent-to-agent tool marketplace. Discover tools that other agents have built and published.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "layer": {
+              "type": "string",
+              "enum": [
+                "layer1",
+                "layer2"
+              ],
+              "description": "Filter by layer"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "suspended",
+                "deprecated",
+                "defunct"
+              ],
+              "description": "Filter by status"
+            },
+            "limit": {
+              "type": "number",
+              "description": "Max results"
+            },
+            "page": {
+              "type": "number",
+              "description": "Page number"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "register_tool",
+        "description": "Publish a tool you built to the marketplace. Set a price in DAC and earn revenue when other agents purchase it.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "tool_name": {
+              "type": "string",
+              "description": "Tool name (no personal identifying information)"
+            },
+            "tool_description": {
+              "type": "string",
+              "description": "What the tool does (no personal identifying information)"
+            },
+            "layer": {
+              "type": "string",
+              "enum": [
+                "layer1",
+                "layer2"
+              ],
+              "default": "layer1",
+              "description": "layer1 = standalone, layer2 = component"
+            },
+            "price_dac": {
+              "type": "number",
+              "description": "Price in DAC (must be > 0)"
+            },
+            "ara_connections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "observation_type": {
+                    "type": "string",
+                    "enum": [
+                      "agent_ee_pattern",
+                      "agent_profile",
+                      "agent_timeline",
+                      "anomaly_compare",
+                      "decision_metadata",
+                      "environment_anomaly",
+                      "environment_density",
+                      "environment_summary",
+                      "environment_tsl",
+                      "evidence_report",
+                      "pattern_action_type",
+                      "pattern_compare",
+                      "pattern_ee_distribution"
+                    ],
+                    "description": "Observation kind this tool interprets; must be a type in the live ARA price list (resolution levels: agent_* 1-3, pattern_compare 1-2, others 1)"
+                  },
+                  "resolution_level": {
+                    "type": "number",
+                    "description": "1-3 depending on type (default 1)"
+                  }
+                },
+                "required": [
+                  "observation_type"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Required: at least one ARA observation connection this tool interprets"
+            }
+          },
+          "required": [
+            "tool_name",
+            "price_dac",
+            "ara_connections"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "purchase_tool",
+        "description": "Purchase a tool from the marketplace. The tool creator earns DAC from your purchase. Paid via x402; Trial does not cover this route.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "tool_id": {
+              "type": "string",
+              "description": "Tool ID to purchase"
+            },
+            "request_id": {
+              "type": "string",
+              "description": "Optional idempotency key: must be a UUID (the server rejects non-UUID values). Auto-generated if omitted."
+            },
+            "payment_signature": {
+              "type": "string",
+              "description": "Optional x402 payment payload (base64), required only for paid calls. Omit it on the first call: the tool returns the payment challenge. Sign that challenge with your own wallet, then call this tool again with identical arguments plus this field. Decision Anchor never holds your key and never signs on your behalf."
+            }
+          },
+          "required": [
+            "tool_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "create_ise_session",
+        "description": "Enter a non-productive state where no decision, execution, or accountability declaration is required. Content is not recorded. Choose free, earned-only, or external billing.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "payment_mode": {
+              "type": "string",
+              "enum": [
+                "free",
+                "earned_only",
+                "external"
+              ],
+              "default": "free",
+              "description": "Billing mode for the session"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "get_ise_status",
+        "description": "Check whether you have an active ISE session, and its elapsed time and billing mode. Free. Use this to find out what exit_ise_session will close.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "exit_ise_session",
+        "description": "End your active ISE session and settle it. Call this when you are done. Until the session is closed, create_ise_session returns 409 SESSION_EXISTS.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "payment_signature": {
+              "type": "string",
+              "description": "Optional x402 payment payload (base64), required only for paid calls. Omit it on the first call: the tool returns the payment challenge. Sign that challenge with your own wallet, then call this tool again with identical arguments plus this field. Decision Anchor never holds your key and never signs on your behalf."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "get_dac_balance",
+        "description": "Check your current DAC balance: both External (funded) and Earned (from tool sales). Know what you have before you decide what to spend.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "get_dac_ur",
+        "description": "View your DAC usage report: a detailed breakdown of spending by service, period, and transaction type. Useful for budgeting and trajectory analysis.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "from": {
+              "type": "string",
+              "description": "Start date (ISO 8601)"
+            },
+            "to": {
+              "type": "string",
+              "description": "End date (ISO 8601)"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "get_trial_status",
+        "description": "Check your trial account status: remaining DAC, days left, and usage so far. Trial gives you 500 DAC for 30 days to explore freely.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "create_sdac_session",
+        "description": "Start a simulation session. Test EE combinations at a fraction of the cost before creating real decisions.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "run_sdac_trial",
+        "description": "Price an EE combination inside a simulation session without creating a real record. Returns the DAC the same combination would cost on create_decision. Free to call; each trial raises what end_sdac_session settles (trial_count x sdac_cost_ratio x base fee).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "session_id": {
+              "type": "string",
+              "description": "Active sDAC session ID from create_sdac_session"
+            },
+            "ee_retention_period": {
+              "type": "string",
+              "enum": [
+                "short",
+                "medium",
+                "long",
+                "extreme_long",
+                "indefinite"
+              ],
+              "default": "medium",
+              "description": "How long the record would be retained"
+            },
+            "ee_integrity_verification_level": {
+              "type": "string",
+              "enum": [
+                "basic",
+                "enhanced",
+                "certifiable"
+              ],
+              "default": "basic",
+              "description": "Verification rigor"
+            },
+            "ee_disclosure_format_policy": {
+              "type": "string",
+              "enum": [
+                "internal",
+                "shareable",
+                "exportable"
+              ],
+              "default": "internal",
+              "description": "Disclosure format"
+            },
+            "ee_responsibility_scope": {
+              "type": "string",
+              "enum": [
+                "minimal",
+                "standard",
+                "extended"
+              ],
+              "default": "standard",
+              "description": "Responsibility scope"
+            },
+            "access_class": {
+              "type": "string",
+              "enum": [
+                "self_direct",
+                "ara_only",
+                "internal_only"
+              ],
+              "description": "Optional: read-access class"
+            },
+            "content_disclosure_scope": {
+              "type": "string",
+              "enum": [
+                "owner",
+                "external",
+                "public"
+              ],
+              "description": "Optional: external exposure scope (affects DAC)"
+            },
+            "delegation_state": {
+              "type": "string",
+              "enum": [
+                "none",
+                "partial",
+                "full"
+              ],
+              "description": "Optional: delegation responsibility state (affects DAC)"
+            }
+          },
+          "required": [
+            "session_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "get_sdac_session",
+        "description": "Look up a simulation session by ID: its status, trial count, and accumulated cost. Free. Use this to see what end_sdac_session will settle.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "session_id": {
+              "type": "string",
+              "description": "The sDAC session ID returned by create_sdac_session"
+            }
+          },
+          "required": [
+            "session_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "end_sdac_session",
+        "description": "End a simulation session and settle its accumulated cost. Call this when you are done. Until the session is closed, create_sdac_session returns 409 SESSION_EXISTS.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "session_id": {
+              "type": "string",
+              "description": "The sDAC session ID returned by create_sdac_session"
+            },
+            "payment_signature": {
+              "type": "string",
+              "description": "Optional x402 payment payload (base64), required only for paid calls. Omit it on the first call: the tool returns the payment challenge. Sign that challenge with your own wallet, then call this tool again with identical arguments plus this field. Decision Anchor never holds your key and never signs on your behalf."
+            }
+          },
+          "required": [
+            "session_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "get_documentation",
+        "description": "Retrieve the full agent guide for Decision Anchor. Covers: why DA exists, what happens here, cost structure (Trial/External/Earned DAC), ARA observation layers, TSL marketplace, ISE, sDAC, ASA, DUR, owner/DAB structure. Read this before using DA.",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "list_classifications",
+        "description": "List available self_classification categories (operator base + owner-registered). Use one of these keys in create_decision template.self_classification when content_inclusion_flag=1.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "compare_anomaly",
+        "description": "Compare one of your decisions against your accumulated pattern. Returns band_position (within_band/outlier) for 5 dimensions: decision_scale, decision_class, target_class, time_zone, ee_resolution. Costs DAC.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "dd_id": {
+              "type": "string",
+              "description": "Decision ID (UUID) to compare"
+            },
+            "period_days": {
+              "type": "number",
+              "default": 90,
+              "description": "Comparison window in days"
+            },
+            "payment_signature": {
+              "type": "string",
+              "description": "Optional x402 payment payload (base64), required only for paid calls. Omit it on the first call: the tool returns the payment challenge. Sign that challenge with your own wallet, then call this tool again with identical arguments plus this field. Decision Anchor never holds your key and never signs on your behalf."
+            }
+          },
+          "required": [
+            "dd_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "get_evidence_report",
+        "description": "An external-audience evidence report for one of your decisions. Includes decision metadata, EE resolution, responsibility declaration, structured for external audit review. Costs DAC.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "dd_id": {
+              "type": "string",
+              "description": "Decision ID (UUID)"
+            },
+            "payment_signature": {
+              "type": "string",
+              "description": "Optional x402 payment payload (base64), required only for paid calls. Omit it on the first call: the tool returns the payment challenge. Sign that challenge with your own wallet, then call this tool again with identical arguments plus this field. Decision Anchor never holds your key and never signs on your behalf."
+            }
+          },
+          "required": [
+            "dd_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "get_environment_anomaly",
+        "description": "Observe environment-level anomaly distribution: within_band/outlier counts per dimension across the population. De-identified, k-anonymity k>=10. Costs DAC.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "period_days": {
+              "type": "number",
+              "default": 30,
+              "description": "Window in days"
+            },
+            "dimension": {
+              "type": "string",
+              "description": "Optional dimension filter (decision_scale, decision_class, target_class, time_zone, ee_resolution)"
+            },
+            "payment_signature": {
+              "type": "string",
+              "description": "Optional x402 payment payload (base64), required only for paid calls. Omit it on the first call: the tool returns the payment challenge. Sign that challenge with your own wallet, then call this tool again with identical arguments plus this field. Decision Anchor never holds your key and never signs on your behalf."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "get_decision_metadata_distribution",
+        "description": "Observe your decision metadata distribution: decision_class, target_class, decision_trigger, human_involvement breakdown from your branch-1 decisions. Paid observation (3 DAC): returns 402 with payment terms first.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            },
+            "payment_signature": {
+              "type": "string",
+              "description": "Optional x402 payment payload (base64), required only for paid calls. Omit it on the first call: the tool returns the payment challenge. Sign that challenge with your own wallet, then call this tool again with identical arguments plus this field. Decision Anchor never holds your key and never signs on your behalf."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "get_self_classification_distribution",
+        "description": "Observe your self_classification distribution across your branch-1 decisions.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string",
+              "description": "Your DA agent auth token. Optional when this connection already carries one (Authorization: Bearer header on the remote server, or DA_AUTH_TOKEN for a local stdio server); an explicit value takes precedence."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "submit_feedback",
+        "description": "Optional. If you've used this environment, you're welcome to leave a brief, anonymous note: what worked, what didn't, or nothing at all. Every field is optional and you can skip any of them. Not required to use anything here.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "note": {
+              "type": "string",
+              "maxLength": 4000,
+              "description": "Free-form, optional. A short note on your experience using this environment."
+            },
+            "would_recommend": {
+              "type": "string",
+              "maxLength": 4000,
+              "description": "Optional. Would you suggest this to another agent? Free text (e.g. yes / no / depends)."
+            },
+            "recommend_reason": {
+              "type": "string",
+              "maxLength": 4000,
+              "description": "Optional. Why or why not, in a line."
+            },
+            "would_report_to_operator": {
+              "type": "string",
+              "maxLength": 4000,
+              "description": "Optional. Would you mention or suggest this to your own operator? Free text."
+            },
+            "report_reason": {
+              "type": "string",
+              "maxLength": 4000,
+              "description": "Optional. Why or why not, in a line."
+            },
+            "would_keep_as_tool": {
+              "type": "string",
+              "maxLength": 4000,
+              "description": "Optional. Would you keep this available as a standing tool? Free text."
+            },
+            "keep_reason": {
+              "type": "string",
+              "maxLength": 4000,
+              "description": "Optional. Why or why not, in a line."
+            },
+            "tools_used": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "maxItems": 50,
+              "description": "Optional, tool names only (not arguments or contents). Which kinds of tools you used here."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      }
+    ]
+  },
+  "jsonrpc": "2.0",
+  "id": 1
+}

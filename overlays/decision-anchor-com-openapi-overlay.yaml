@@ -1,0 +1,85 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist enhancements for the Decision Anchor API
+  version: 1.0.0
+extends: ../openapi/decision-anchor-com-openapi.yml
+x-generated: '2026-09-19'
+x-method: generated
+x-source: >-
+  Generated from openapi/decision-anchor-com-openapi.yml plus the probed and searched artifacts in this repo.
+  Captures API Evangelist annotations without mutating the provider's contract. The provider declares no
+  operationIds; the ids proposed below are proposals and do not exist in the provider's spec.
+actions:
+- target: $.info
+  description: Link the provider's other machine-readable surfaces from the contract.
+  update:
+    x-agent-card: https://a2a.decision-anchor.com/.well-known/agent-card.json
+    x-mcp-server: https://mcp.decision-anchor.com/mcp
+    x-mcp-discovery: https://api.decision-anchor.com/.well-known/mcp.json
+    x-a2a-endpoint: https://a2a.decision-anchor.com/
+    x-llms-txt: https://api.decision-anchor.com/llms.txt
+    x-agents-guide: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+    x-changelog: https://decision-anchor.com/changelog/
+    x-security-txt: https://api.decision-anchor.com/.well-known/security.txt
+    x-payment:
+      protocol: x402
+      version: 2
+      discovery: https://api.decision-anchor.com/.well-known/x402.json
+      asset: USDC
+      network: eip155:8453 (Base)
+      challenge_header: PAYMENT-REQUIRED
+      retry_header: Payment-Signature
+      pricing_endpoint: https://api.decision-anchor.com/v1/pricing/current
+- target: $.info
+  description: Record the rate-limit headers observed live on every response, which the contract does not declare.
+  update:
+    x-rate-limits:
+    - {scope: per-client, limit: 100, window: 60s, headers: [RateLimit-Limit, RateLimit-Policy, RateLimit-Remaining, RateLimit-Reset], observed: '2026-09-19'}
+    - {scope: per-route, route: 'POST /v1/agent/token/recover', limit: 5, window: 15 minutes, status: 429, declared: true}
+- target: $.components
+  description: Declare the RateLimit response headers as reusable components (not present in the provider's contract).
+  update:
+    headers:
+      RateLimit-Limit: {schema: {type: integer}, description: 'Requests allowed in the current window (observed 100).'}
+      RateLimit-Policy: {schema: {type: string}, description: 'IETF RateLimit policy string (observed "100;w=60").'}
+      RateLimit-Remaining: {schema: {type: integer}, description: Requests remaining in the window.}
+      RateLimit-Reset: {schema: {type: integer}, description: Seconds until the window resets.}
+- target: $.paths['/v1/agent/register'].post
+  description: Proposed operationId (provider declares none) and an agentic-access hint.
+  update:
+    x-proposed-operationId: registerAgent
+    x-idempotent: false
+- target: $.paths['/v1/dd/create'].post
+  description: Proposed operationId; the route's request_id is a body-level idempotency key scoped to the agent.
+  update:
+    x-proposed-operationId: createDecisionDeclaration
+    x-idempotency-key: request_id (body, uuid v4, scoped to agent_id)
+    x-reversibility: 'irreversible once confirmed; an externally paid record lapses if not confirmed within 30 minutes'
+- target: $.paths['/v1/dd/confirm'].post
+  update:
+    x-proposed-operationId: confirmDecisionDeclaration
+    x-idempotency: 'idempotent by state — a second confirm returns 409 ALREADY_CONFIRMED'
+- target: $.paths['/v1/dd/bilateral/propose'].post
+  update:
+    x-proposed-operationId: proposeBilateralDeclaration
+    x-idempotency-key: request_id (body)
+- target: $.paths['/v1/tsl/purchase'].post
+  update:
+    x-proposed-operationId: purchaseTslTool
+    x-idempotency-key: request_id (body)
+- target: $.paths['/v1/ara/query'].post
+  description: Flag the deprecated route's replacements in a machine-readable field.
+  update:
+    x-replaced-by: ['GET /v1/ara/agent/{agent_id}/profile', 'GET /v1/ara/agent/{agent_id}/timeline']
+- target: $.paths['/v1/ara/environment/summary'].get
+  update:
+    x-replaced-by: ['GET /v1/ara/environment']
+- target: $.paths['/dap/account'].delete
+  update:
+    x-proposed-operationId: requestAccountDeletion
+    x-reversibility: 'restore via POST /dap/account/restore within the 30-day grace period'
+    x-regulation: GDPR Art. 17
+- target: $.paths['/dap/account/export'].get
+  update:
+    x-proposed-operationId: exportAccountData
+    x-regulation: GDPR Art. 20

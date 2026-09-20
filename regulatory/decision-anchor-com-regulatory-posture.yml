@@ -1,0 +1,53 @@
+generated: '2026-09-19'
+method: searched
+probe: true
+source: https://api.decision-anchor.com/openapi.json
+signals:
+  data_subject_request:
+    url: https://api.decision-anchor.com/openapi.json
+    api: https://api.decision-anchor.com/dap/account
+    rights_named: [erasure (GDPR Art. 17), portability (GDPR Art. 20)]
+    operations:
+    - {operation: 'DELETE /dap/account', summary: 'Request account deletion (30-day grace period, GDPR Art. 17)', auth: DAPSession cookie + password in body}
+    - {operation: 'POST /dap/account/restore', summary: Restore account within the deletion grace period}
+    - {operation: 'GET /dap/account/deletion-status', summary: Get account deletion status}
+    - {operation: 'GET /dap/account/export', summary: 'Export own account data (GDPR Art. 20)'}
+    - {operation: 'PUT /dap/account/marketing-consent', summary: Update marketing consent}
+    stated_period: '30-day grace period'
+    evidence:
+    - source: https://api.decision-anchor.com/openapi.json
+      http_status: 200
+      fetched: '2026-09-19'
+      quote: 'summary: "Request account deletion (30-day grace period, GDPR Art. 17)" ... summary: "Export own account data (GDPR Art. 20)"'
+    note: >-
+      The substance here is a set of real, documented API operations that name the GDPR articles they
+      implement, for DAP owner (portal) accounts — not a privacy page. No privacy policy, DSR intake page or
+      email channel was found on any host (/privacy, /legal/privacy, /privacy/requests all 404 on the apex).
+      Agent identities (agent_id) have no erasure or export route; the product's design is that decision
+      records are retained for their EE period and then de-identified.
+absent:
+  sbom: {probed: ['https://decision-anchor.com/security/sbom'], status: 404}
+  support_lifetime: {probed: ['https://decision-anchor.com/changelog/', 'https://api.decision-anchor.com/openapi.json'], note: 'No support period stated for v1 or for the SDK; the changelog is a defect log, not a lifecycle statement.'}
+  accessibility_conformance: {probed: ['https://decision-anchor.com/accessibility', 'https://decision-anchor.com/accessibility/vpat'], status: 404}
+  training_data_summary: {note: 'Not an AI model provider; no AI-generated content is claimed anywhere.'}
+  ai_transparency: {probed: ['https://decision-anchor.com/ai/transparency'], status: 404, note: 'The product is infrastructure for AI agents; the site describes what it does not do (judge, score, intervene) at length, but publishes no disclosure about its own use of AI.'}
+  global_privacy_control: {note: 'No privacy policy exists to state it; not set.'}
+  subprocessors: {probed: ['https://decision-anchor.com/legal/subprocessors', 'https://decision-anchor.com/legal/dpa'], status: 404, note: 'Response headers show Cloudflare in front of the API and x402.json names the Coinbase facilitator, but neither is published as a subprocessor list.'}
+  data_residency: {probed: ['https://decision-anchor.com/docs/data-residency'], status: 404, note: 'register accepts a region_code that is "Metadata only"; no residency commitment.'}
+  incident_notification: {probed: ['https://decision-anchor.com/legal/dpa'], status: 404}
+  age_assurance: {note: 'No consumer surface.'}
+  notice_and_action: {probed: ['https://decision-anchor.com/legal/report-content'], status: 404}
+  transparency_report: {probed: ['https://decision-anchor.com/transparency'], status: 404}
+  exit_assistance: {note: 'GET /dap/account/export and GET /v1/dur/export (CSV/JSON) exist, but neither is framed as switching or exit assistance; recorded under data_subject_request instead.'}
+probed:
+- {url: 'https://decision-anchor.com/privacy', status: 404}
+- {url: 'https://decision-anchor.com/terms', status: 404}
+- {url: 'https://decision-anchor.com/legal/terms', status: 404}
+- {url: 'https://decision-anchor.com/legal/privacy', status: 404}
+- {url: 'https://decision-anchor.com/security', status: 404}
+- {url: 'https://api.decision-anchor.com/terms', status: 404}
+- {url: 'https://api.decision-anchor.com/privacy', status: 404}
+note: >-
+  Decision Anchor publishes no legal pages at all — no terms of service, no privacy policy — on any host,
+  which is itself the finding for a service that takes USDC payments and stores agent decision metadata.
+  The only regulatory signal it publishes is inside its API contract.
