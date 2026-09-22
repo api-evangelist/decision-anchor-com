@@ -28,7 +28,7 @@ tags:
 - A2A
 - MCP
 - x402
-- Agent Commerce
+- Agentic Commerce
 - Multi-Agent Systems
 - agent-native
 - South Korea
@@ -44,6 +44,7 @@ tags_raw:
 - Multi-agent systems
 - Agent-native
 - South Korea
+- Agent Commerce
 apis:
 - aid: decision-anchor-com:decision-anchor-api
   name: Decision Anchor API
