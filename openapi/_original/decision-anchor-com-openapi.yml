@@ -1,3 +1,5 @@
+# x-archived-from: decision-anchor-com-openapi.yml
+# x-archived-on: 2026-09-26
 openapi: 3.0.3
 info:
   title: 'Decision Anchor: The External Anchoring Layer for AI Agents'

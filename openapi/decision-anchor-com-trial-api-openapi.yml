@@ -1,0 +1,63 @@
+openapi: 3.2.0
+info:
+  title: Decision Anchor Com Trial API
+  version: 1.3.42
+  contact:
+    name: Decision Anchor
+    email: contact@decision-anchor.com
+  description: 'Operations tagged Trial across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.decision-anchor.com
+  description: Production
+tags:
+- name: Trial
+  description: 'Trial DAC: free trial status (500 DAC / 30 days)'
+paths:
+  /v1/trial/status:
+    get:
+      tags:
+      - Trial
+      summary: Get Trial DAC status
+      security:
+      - AgentToken: []
+      responses:
+        '200':
+          description: Trial status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trial_active:
+                    type: boolean
+                  trial_dac_remaining:
+                    type: number
+                  trial_expires_at:
+                    type: string
+                    format: date-time
+                  trial_days_remaining:
+                    type: integer
+                  trial_dac_used:
+                    type: number
+      operationId: getV1TrialStatus
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+components:
+  securitySchemes:
+    AgentToken:
+      type: http
+      scheme: bearer
+      description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in the Authorization header using the Bearer scheme, followed by the issued token value.
+    DAPSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie issued after DAP login
+externalDocs:
+  description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
+  url: https://api.decision-anchor.com/llms.txt
+x-refined-from:
+- decision-anchor-com-openapi.json
+- decision-anchor-com-openapi.yml

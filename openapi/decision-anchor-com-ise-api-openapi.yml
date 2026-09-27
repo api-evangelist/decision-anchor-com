@@ -1,0 +1,160 @@
+openapi: 3.2.0
+info:
+  title: Decision Anchor Com ISE API
+  version: 1.3.42
+  contact:
+    name: Decision Anchor
+    email: contact@decision-anchor.com
+  description: 'Operations tagged ISE across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.decision-anchor.com
+  description: Production
+tags:
+- name: ISE
+  description: 'Idle State Environment: non-productive agent state'
+paths:
+  /v1/ise/enter:
+    post:
+      tags:
+      - ISE
+      summary: Enter ISE session
+      security:
+      - AgentToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payment_mode:
+                  type: string
+                  enum:
+                  - free
+                  - earned_only
+                  - external
+                  description: Payment mode
+      responses:
+        '201':
+          description: ISE session started
+      operationId: postV1IseEnter
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ise/status:
+    get:
+      tags:
+      - ISE
+      summary: Get current ISE session status
+      security:
+      - AgentToken: []
+      responses:
+        '200':
+          description: Session status
+      operationId: getV1IseStatus
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ise/exit:
+    post:
+      tags:
+      - ISE
+      summary: Exit ISE session
+      security:
+      - AgentToken: []
+      responses:
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '200':
+          description: Session ended with DAC charge info
+      operationId: postV1IseExit
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+components:
+  schemas:
+    X402Challenge:
+      type: object
+      description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
+      properties:
+        x402Version:
+          type: integer
+          enum:
+          - 2
+          description: x402 protocol version.
+        error:
+          type: string
+          description: Short reason string, e.g. "Payment required".
+        resource:
+          type: object
+          description: The resource being paid for.
+          properties:
+            url:
+              type: string
+              format: uri
+            description:
+              type: string
+            mimeType:
+              type: string
+        accepts:
+          type: array
+          description: Accepted payment options. Decision Anchor issues exactly one (exact scheme, USDC on Base).
+          items:
+            type: object
+            properties:
+              scheme:
+                type: string
+                description: Payment scheme. Decision Anchor uses "exact".
+              network:
+                type: string
+                description: CAIP-2 chain id. Decision Anchor settles on Base (eip155:8453).
+              amount:
+                type: string
+                description: Amount in the asset's smallest unit (USDC has 6 decimals). Computed per request from the EE axes, so it varies; always read it from the live challenge.
+              asset:
+                type: string
+                description: ERC-20 contract address of the settlement asset (USDC on Base).
+              payTo:
+                type: string
+                description: Recipient address. Operator-configured; read it from the live challenge rather than pinning it.
+              maxTimeoutSeconds:
+                type: integer
+                description: Validity window of this challenge.
+              extra:
+                type: object
+                description: 'Scheme-specific metadata (for exact/EIP-3009: the asset''s EIP-712 domain name and version).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
+          additionalProperties: true
+  responses:
+    PaymentRequired:
+      description: 'Payment required: the response body and the `PAYMENT-REQUIRED` header both carry an x402 payment challenge (HTTP 402, x402 protocol v2). Obtain the challenge, produce a payment payload with your own wallet, and retry the identical request with a `Payment-Signature` header. Routes marked trial_eligible in /.well-known/x402.json are covered by the Trial balance while it lasts, in which case no challenge is issued.'
+      headers:
+        PAYMENT-REQUIRED:
+          description: Base64-encoded x402 challenge (canonical source; the JSON body is a convenience copy).
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402Challenge'
+  securitySchemes:
+    AgentToken:
+      type: http
+      scheme: bearer
+      description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in the Authorization header using the Bearer scheme, followed by the issued token value.
+    DAPSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie issued after DAP login
+externalDocs:
+  description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
+  url: https://api.decision-anchor.com/llms.txt
+x-refined-from:
+- decision-anchor-com-openapi.json
+- decision-anchor-com-openapi.yml

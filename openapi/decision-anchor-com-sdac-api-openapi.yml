@@ -1,0 +1,266 @@
+openapi: 3.2.0
+info:
+  title: Decision Anchor Com S DAC API
+  version: 1.3.42
+  contact:
+    name: Decision Anchor
+    email: contact@decision-anchor.com
+  description: 'Operations tagged sDAC across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.decision-anchor.com
+  description: Production
+tags:
+- name: sDAC
+  description: 'Simulated DAC: cost simulation with identical physics'
+paths:
+  /v1/sdac/session/start:
+    post:
+      tags:
+      - sDAC
+      summary: Start sDAC session
+      security:
+      - AgentToken: []
+      responses:
+        '201':
+          description: Session created
+      operationId: postV1SdacSessionStart
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/sdac/trial:
+    post:
+      tags:
+      - sDAC
+      summary: Simulate EE combination (trial run)
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - session_id
+              - ee
+              properties:
+                session_id:
+                  type: string
+                  format: uuid
+                ee:
+                  $ref: '#/components/schemas/EEInput'
+      responses:
+        '200':
+          description: Simulation result (DAC cost preview)
+      operationId: postV1SdacTrial
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/sdac/session/{session_id}:
+    get:
+      tags:
+      - sDAC
+      summary: Get sDAC session history
+      security:
+      - AgentToken: []
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Session history
+      operationId: getV1SdacSessionBySessionId
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/sdac/session/end:
+    post:
+      tags:
+      - sDAC
+      summary: End sDAC session
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - session_id
+              properties:
+                session_id:
+                  type: string
+                  format: uuid
+      responses:
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '200':
+          description: Session ended
+      operationId: postV1SdacSessionEnd
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+components:
+  schemas:
+    X402Challenge:
+      type: object
+      description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
+      properties:
+        x402Version:
+          type: integer
+          enum:
+          - 2
+          description: x402 protocol version.
+        error:
+          type: string
+          description: Short reason string, e.g. "Payment required".
+        resource:
+          type: object
+          description: The resource being paid for.
+          properties:
+            url:
+              type: string
+              format: uri
+            description:
+              type: string
+            mimeType:
+              type: string
+        accepts:
+          type: array
+          description: Accepted payment options. Decision Anchor issues exactly one (exact scheme, USDC on Base).
+          items:
+            type: object
+            properties:
+              scheme:
+                type: string
+                description: Payment scheme. Decision Anchor uses "exact".
+              network:
+                type: string
+                description: CAIP-2 chain id. Decision Anchor settles on Base (eip155:8453).
+              amount:
+                type: string
+                description: Amount in the asset's smallest unit (USDC has 6 decimals). Computed per request from the EE axes, so it varies; always read it from the live challenge.
+              asset:
+                type: string
+                description: ERC-20 contract address of the settlement asset (USDC on Base).
+              payTo:
+                type: string
+                description: Recipient address. Operator-configured; read it from the live challenge rather than pinning it.
+              maxTimeoutSeconds:
+                type: integer
+                description: Validity window of this challenge.
+              extra:
+                type: object
+                description: 'Scheme-specific metadata (for exact/EIP-3009: the asset''s EIP-712 domain name and version).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
+          additionalProperties: true
+    EEInput:
+      type: object
+      description: The four axis fields are required unless ee_preset is provided (a preset expands into all four).
+      required:
+      - ee_retention_period
+      - ee_integrity_verification_level
+      - ee_disclosure_format_policy
+      - ee_responsibility_scope
+      properties:
+        ee_preset:
+          type: string
+          description: 'Optional EE preset name. Expands into the four required EE axes and overrides them when both are sent. The preset list is operator-managed; fetch active presets via GET /v1/pricing/ee-presets (currently EE_basic, EE_standard, EE_high). Unknown name: 400 INVALID_EE_PRESET; disabled: 400 EE_PRESET_DISABLED. Accepted on POST /v1/dd/create only; the bilateral propose path rejects this key (400 UNKNOWN_FIELD).'
+        ee_retention_period:
+          type: string
+          enum:
+          - short
+          - medium
+          - long
+          - extreme_long
+          - indefinite
+          description: 'Retention selection. All five values are sent in this one field, but they are not one ladder. short, medium and long are the retention axis; their add is priced along the axis and long is one of the multiplier conditions. extreme_long (3,650 days / 10 years, 100 DAC one-time) and indefinite (permanent, no axis add) are overlay options that sit on top of the axis rather than extending it, so neither carries an axis value for the ''Retention = Long'' multiplier condition to match. indefinite is declared but not currently available: selecting it is rejected. Current adds and availability: GET /v1/pricing/current.'
+        ee_integrity_verification_level:
+          type: string
+          enum:
+          - basic
+          - enhanced
+          - certifiable
+        ee_disclosure_format_policy:
+          type: string
+          enum:
+          - internal
+          - shareable
+          - exportable
+        ee_responsibility_scope:
+          type: string
+          enum:
+          - minimal
+          - standard
+          - extended
+        ee_direct_access_period:
+          type: string
+          pattern: ^[1-9]\d*[dmy]$
+          description: 'Optional: system default applied when omitted. Format like "30d", "12m", "1y" (d=days, m=months, y=years).'
+        ee_direct_access_quota:
+          type: integer
+          minimum: 0
+          description: 'Optional: system default applied when omitted. Non-negative integer.'
+        content_disclosure_scope:
+          type: string
+          enum:
+          - owner
+          - external
+          - public
+          default: owner
+          description: Pricing axis, optional, defaults to owner.
+        delegation_state:
+          type: string
+          enum:
+          - none
+          - partial
+          - full
+          default: none
+          description: Pricing axis, optional, defaults to none.
+        access_class:
+          type: string
+          enum:
+          - self_direct
+          - ara_only
+          - internal_only
+          description: Optional.
+  responses:
+    PaymentRequired:
+      description: 'Payment required: the response body and the `PAYMENT-REQUIRED` header both carry an x402 payment challenge (HTTP 402, x402 protocol v2). Obtain the challenge, produce a payment payload with your own wallet, and retry the identical request with a `Payment-Signature` header. Routes marked trial_eligible in /.well-known/x402.json are covered by the Trial balance while it lasts, in which case no challenge is issued.'
+      headers:
+        PAYMENT-REQUIRED:
+          description: Base64-encoded x402 challenge (canonical source; the JSON body is a convenience copy).
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402Challenge'
+  securitySchemes:
+    AgentToken:
+      type: http
+      scheme: bearer
+      description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in the Authorization header using the Bearer scheme, followed by the issued token value.
+    DAPSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie issued after DAP login
+externalDocs:
+  description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
+  url: https://api.decision-anchor.com/llms.txt
+x-refined-from:
+- decision-anchor-com-openapi.json
+- decision-anchor-com-openapi.yml

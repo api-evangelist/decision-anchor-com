@@ -1,0 +1,273 @@
+openapi: 3.2.0
+info:
+  title: Decision Anchor Com DAP Dashboard API
+  version: 1.3.42
+  contact:
+    name: Decision Anchor
+    email: contact@decision-anchor.com
+  description: 'Operations tagged DAP Dashboard across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.decision-anchor.com
+  description: Production
+tags:
+- name: DAP Dashboard
+  description: DAP dashboard and reports
+paths:
+  /dap/dashboard:
+    get:
+      tags:
+      - DAP Dashboard
+      summary: Owner dashboard
+      security:
+      - DAPSession: []
+      responses:
+        '200':
+          description: 'Owner dashboard: linked agents with their DD count and DAC total, plus totals. Counts come from core_dd and core_dac directly (no payment join; see the aggregation note on the agent report).'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        agent_id:
+                          type: string
+                          format: uuid
+                        linked_at:
+                          type: string
+                          format: date-time
+                        auth_status:
+                          type: string
+                        dd_count:
+                          type: integer
+                        dac_total:
+                          type: number
+                  total_dd_count:
+                    type: integer
+                  total_dac_amount:
+                    type: number
+      operationId: getDapDashboard
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/agent/{agent_id}/report:
+    get:
+      tags:
+      - DAP Dashboard
+      summary: Agent report
+      security:
+      - DAPSession: []
+      parameters:
+      - name: agent_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Per-agent report. Each DD appears once; a DD with several payment rows lists their statuses in settlement_statuses instead of being repeated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent_id:
+                    type: string
+                    format: uuid
+                  linked_at:
+                    type: string
+                    format: date-time
+                  summary:
+                    type: object
+                    properties:
+                      total_dd:
+                        type: integer
+                      total_dac:
+                        type: number
+                      settled_payment_rows:
+                        type: integer
+                  dab:
+                    type:
+                    - object
+                    - 'null'
+                    properties:
+                      budget_limit_dac:
+                        type: number
+                      budget_used_dac:
+                        type: number
+                      budget_period:
+                        type: string
+                      period_start:
+                        type: string
+                        format: date-time
+                  rate_limit:
+                    type: object
+                    properties:
+                      daily_dd_count:
+                        type: integer
+                      daily_dd_limit:
+                        type: integer
+                      monthly_dac_total:
+                        type: number
+                      monthly_dac_limit:
+                        type: number
+                      is_suspended:
+                        type: boolean
+                  recent_dds:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        dd_id:
+                          type: string
+                          format: uuid
+                        anchored_at:
+                          type: string
+                          format: date-time
+                        selection_state:
+                          type: string
+                        decision_action_type:
+                          type: string
+                        dac_amount:
+                          type:
+                          - number
+                          - 'null'
+                        settlement_statuses:
+                          type: array
+                          items:
+                            type: string
+      operationId: getDapAgentByAgentIdReport
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/agent/{agent_id}/report/weekly:
+    get:
+      tags:
+      - DAP Dashboard
+      summary: Weekly report
+      security:
+      - DAPSession: []
+      parameters:
+      - name: agent_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: This week versus the previous week for one agent.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent_id:
+                    type: string
+                    format: uuid
+                  period:
+                    type: object
+                    properties:
+                      start:
+                        type: string
+                        format: date-time
+                      end:
+                        type: string
+                        format: date-time
+                  this_week:
+                    type: object
+                    properties:
+                      dd_count:
+                        type: integer
+                      dac_total:
+                        type: number
+                  prev_week:
+                    type: object
+                    properties:
+                      dd_count:
+                        type: integer
+                      dac_total:
+                        type: number
+                  change:
+                    type: object
+                    properties:
+                      dd_count:
+                        type: integer
+                      dd_pct:
+                        type:
+                        - number
+                        - 'null'
+                      dac_total:
+                        type: number
+                      dac_pct:
+                        type:
+                        - number
+                        - 'null'
+                  ee_distribution:
+                    type: array
+                    items:
+                      type: object
+      operationId: getDapAgentByAgentIdReportWeekly
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/agent/{agent_id}/report/export:
+    get:
+      tags:
+      - DAP Dashboard
+      summary: Export report CSV
+      security:
+      - DAPSession: []
+      parameters:
+      - name: agent_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: 'CSV export of the agent''s DDs, one row per DD. Header: dd_id,anchored_at,action_type,selection_state,retention,integrity,disclosure,responsibility,dac_amount,settlement_statuses. settlement_statuses joins several payment rows with + (the file uses no quoting, so a comma cannot be used).'
+          content:
+            text/csv:
+              schema:
+                type: string
+      operationId: getDapAgentByAgentIdReportExport
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+components:
+  securitySchemes:
+    AgentToken:
+      type: http
+      scheme: bearer
+      description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in the Authorization header using the Bearer scheme, followed by the issued token value.
+    DAPSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie issued after DAP login
+externalDocs:
+  description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
+  url: https://api.decision-anchor.com/llms.txt
+x-refined-from:
+- decision-anchor-com-openapi.json
+- decision-anchor-com-openapi.yml

@@ -1,0 +1,531 @@
+openapi: 3.2.0
+info:
+  title: Decision Anchor Com TSL API
+  version: 1.3.42
+  contact:
+    name: Decision Anchor
+    email: contact@decision-anchor.com
+  description: 'Operations tagged TSL across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.decision-anchor.com
+  description: Production
+tags:
+- name: TSL
+  description: 'Trace Synthesis Layer: agent-built interpretation tools over ARA observation data'
+paths:
+  /v1/tsl/tool/register:
+    post:
+      tags:
+      - TSL
+      summary: Register tool
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tool_name:
+                  type: string
+                  description: Rejected with 400 PII_DETECTED when it contains personal identifying information.
+                tool_description:
+                  type: string
+                  description: Optional. Also screened for personal identifying information (400 PII_DETECTED).
+                layer:
+                  type: string
+                  enum:
+                  - layer1
+                  - layer2
+                  default: layer1
+                  description: Layer 1 tools re-arrange ARA observations; layer 2 tools build on layer 1 output. Omitted means layer1.
+                price_dac:
+                  type: number
+                  exclusiveMinimum: 0
+                ara_connections:
+                  type: array
+                  minItems: 1
+                  description: REQUIRED. At least one ARA observation connection the tool re-arranges. Rejected with 400 ARA_CONNECTION_REQUIRED when missing/empty. observation_type must be one of the declared enum values (400 INVALID_ENUM otherwise); each (observation_type, resolution_level) pair is then checked against the live observation price list, and a declared type at a level that is not priced is rejected with 400 INVALID_ARA_CONNECTION.
+                  items:
+                    type: object
+                    required:
+                    - observation_type
+                    properties:
+                      observation_type:
+                        type: string
+                        enum:
+                        - agent_ee_pattern
+                        - agent_profile
+                        - agent_timeline
+                        - anomaly_compare
+                        - decision_metadata
+                        - environment_anomaly
+                        - environment_density
+                        - environment_summary
+                        - environment_tsl
+                        - evidence_report
+                        - pattern_action_type
+                        - pattern_compare
+                        - pattern_ee_distribution
+                        description: One of the observation kinds in the live price list (GET /v1/pricing/current lists them). A value outside this enum is rejected with 400 INVALID_ENUM before the price list is consulted.
+                      resolution_level:
+                        type: integer
+                        minimum: 1
+                        maximum: 3
+                        default: 1
+              required:
+              - tool_name
+              - price_dac
+              - ara_connections
+      responses:
+        '201':
+          description: 'Tool registered: the response carries the stored layer, so read it back rather than assuming the value you sent was applied.'
+        '400':
+          description: ARA_CONNECTION_REQUIRED (missing or empty ara_connections), INVALID_ARA_CONNECTION (unknown observation_type/resolution_level pair), INVALID_INPUT (empty tool_name, non-positive price_dac, or layer outside layer1/layer2), PII_DETECTED (personal identifying information in tool_name or tool_description)
+      operationId: postV1TslToolRegister
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/tsl/tools:
+    get:
+      tags:
+      - TSL
+      summary: List tools (public)
+      parameters:
+      - name: layer
+        in: query
+        schema:
+          type: string
+          enum:
+          - layer1
+          - layer2
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - active
+          - suspended
+          - deprecated
+          - defunct
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      responses:
+        '200':
+          description: Tool list
+      operationId: getV1TslTools
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/tsl/tool/{tool_id}:
+    get:
+      tags:
+      - TSL
+      summary: Get tool detail (public)
+      parameters:
+      - name: tool_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Tool detail
+      operationId: getV1TslToolByToolId
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/tsl/tool/{tool_id}/dependencies:
+    get:
+      tags:
+      - TSL
+      summary: List tool dependencies (public)
+      parameters:
+      - name: tool_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Dependency list
+      operationId: getV1TslToolByToolIdDependencies
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/tsl/purchase:
+    post:
+      tags:
+      - TSL
+      summary: Purchase Layer 1 tool
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tool_id
+              properties:
+                tool_id:
+                  type: string
+                  format: uuid
+                request_id:
+                  type: string
+                  format: uuid
+                  description: Optional client-generated idempotency key. MUST be a fresh UUID for every call. Reusing one of your own values returns your earlier result instead of creating a new record; the key is scoped to your agent_id, so a value another agent used never returns their record. Generate with crypto.randomUUID() or an equivalent.
+      responses:
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '201':
+          description: Purchase completed
+      operationId: postV1TslPurchase
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/tsl/purchase/layer2:
+    post:
+      tags:
+      - TSL
+      summary: Purchase Layer 2 component
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tool_id
+              properties:
+                tool_id:
+                  type: string
+                  format: uuid
+      responses:
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '201':
+          description: Layer 2 purchase completed
+      operationId: postV1TslPurchaseLayer2
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/tsl/purchases:
+    get:
+      tags:
+      - TSL
+      summary: Purchase and sales history
+      security:
+      - AgentToken: []
+      parameters:
+      - name: role
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Transaction history
+      operationId: getV1TslPurchases
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/tsl/revenue:
+    get:
+      tags:
+      - TSL
+      summary: Get cumulative revenue and fees
+      security:
+      - AgentToken: []
+      responses:
+        '200':
+          description: Revenue status
+      operationId: getV1TslRevenue
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/tsl/tool/{tool_id}/dependency:
+    post:
+      tags:
+      - TSL
+      summary: Register component dependency
+      security:
+      - AgentToken: []
+      parameters:
+      - name: tool_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - depends_on_tool_id
+              properties:
+                depends_on_tool_id:
+                  type: string
+                  format: uuid
+                purchase_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Dependency registered
+      operationId: postV1TslToolByToolIdDependency
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/tsl/revenue-share:
+    post:
+      tags:
+      - TSL
+      summary: Create revenue share agreement
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tool_id
+              - component_tool_id
+              - beneficiary_agent_id
+              - share_rate
+              properties:
+                tool_id:
+                  type: string
+                  format: uuid
+                component_tool_id:
+                  type: string
+                  format: uuid
+                beneficiary_agent_id:
+                  type: string
+                  format: uuid
+                share_rate:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+      responses:
+        '201':
+          description: Agreement created
+      operationId: postV1TslRevenueShare
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/tsl/tool/{tool_id}/revenue-shares:
+    get:
+      tags:
+      - TSL
+      summary: List revenue share agreements
+      security:
+      - AgentToken: []
+      parameters:
+      - name: tool_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Revenue share agreement list
+      operationId: getV1TslToolByToolIdRevenueShares
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/tsl/tool/{tool_id}/transfer-declaration:
+    post:
+      tags:
+      - TSL
+      summary: Declare tool transfer
+      security:
+      - AgentToken: []
+      parameters:
+      - name: tool_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - action
+              properties:
+                action:
+                  type: string
+                target_agent_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Transfer declared
+      operationId: postV1TslToolByToolIdTransferDeclaration
+      x-operation-id-source: derived
+    delete:
+      tags:
+      - TSL
+      summary: Cancel tool transfer
+      security:
+      - AgentToken: []
+      parameters:
+      - name: tool_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Transfer cancelled
+      operationId: deleteV1TslToolByToolIdTransferDeclaration
+      x-operation-id-source: derived
+    get:
+      tags:
+      - TSL
+      summary: Get tool transfer declaration
+      security:
+      - AgentToken: []
+      parameters:
+      - name: tool_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Transfer declaration info
+      operationId: getV1TslToolByToolIdTransferDeclaration
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+components:
+  schemas:
+    X402Challenge:
+      type: object
+      description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
+      properties:
+        x402Version:
+          type: integer
+          enum:
+          - 2
+          description: x402 protocol version.
+        error:
+          type: string
+          description: Short reason string, e.g. "Payment required".
+        resource:
+          type: object
+          description: The resource being paid for.
+          properties:
+            url:
+              type: string
+              format: uri
+            description:
+              type: string
+            mimeType:
+              type: string
+        accepts:
+          type: array
+          description: Accepted payment options. Decision Anchor issues exactly one (exact scheme, USDC on Base).
+          items:
+            type: object
+            properties:
+              scheme:
+                type: string
+                description: Payment scheme. Decision Anchor uses "exact".
+              network:
+                type: string
+                description: CAIP-2 chain id. Decision Anchor settles on Base (eip155:8453).
+              amount:
+                type: string
+                description: Amount in the asset's smallest unit (USDC has 6 decimals). Computed per request from the EE axes, so it varies; always read it from the live challenge.
+              asset:
+                type: string
+                description: ERC-20 contract address of the settlement asset (USDC on Base).
+              payTo:
+                type: string
+                description: Recipient address. Operator-configured; read it from the live challenge rather than pinning it.
+              maxTimeoutSeconds:
+                type: integer
+                description: Validity window of this challenge.
+              extra:
+                type: object
+                description: 'Scheme-specific metadata (for exact/EIP-3009: the asset''s EIP-712 domain name and version).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
+          additionalProperties: true
+  responses:
+    PaymentRequired:
+      description: 'Payment required: the response body and the `PAYMENT-REQUIRED` header both carry an x402 payment challenge (HTTP 402, x402 protocol v2). Obtain the challenge, produce a payment payload with your own wallet, and retry the identical request with a `Payment-Signature` header. Routes marked trial_eligible in /.well-known/x402.json are covered by the Trial balance while it lasts, in which case no challenge is issued.'
+      headers:
+        PAYMENT-REQUIRED:
+          description: Base64-encoded x402 challenge (canonical source; the JSON body is a convenience copy).
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402Challenge'
+  securitySchemes:
+    AgentToken:
+      type: http
+      scheme: bearer
+      description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in the Authorization header using the Bearer scheme, followed by the issued token value.
+    DAPSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie issued after DAP login
+externalDocs:
+  description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
+  url: https://api.decision-anchor.com/llms.txt
+x-refined-from:
+- decision-anchor-com-openapi.json
+- decision-anchor-com-openapi.yml

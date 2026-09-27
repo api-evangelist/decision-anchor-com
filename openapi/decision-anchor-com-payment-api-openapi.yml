@@ -1,0 +1,113 @@
+openapi: 3.2.0
+info:
+  title: Decision Anchor Com Payment API
+  version: 1.3.42
+  contact:
+    name: Decision Anchor
+    email: contact@decision-anchor.com
+  description: 'Operations tagged Payment across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.decision-anchor.com
+  description: Production
+tags:
+- name: Payment
+  description: 'Payment: transaction status via x402/USDC'
+paths:
+  /v1/payment/{dd_id}/status:
+    get:
+      tags:
+      - Payment
+      summary: Payment status query
+      security:
+      - AgentToken: []
+      parameters:
+      - name: dd_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Payment status for the DD. A DD carries one row per cost component (a DD/EE record splits into base_fee and, when the EE axes add one, premium; other domains attach their own component to an anchor DD), so settlement_status is aggregated across rows and dac_amount_total is their sum.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dd_id:
+                    type: string
+                    format: uuid
+                  payment_id:
+                    type: string
+                    format: uuid
+                    description: Identifier of the first row in the stable order. Do not assume it is any particular cost component; address a specific component through payments[].
+                  settlement_status:
+                    type: string
+                    enum:
+                    - pending
+                    - unreserved
+                    - failed
+                    - released
+                    - settled
+                    description: 'Aggregated over every row, most conservative wins: pending > unreserved > failed > released > settled. It reads settled only when every row is settled. unreserved means the record holds no budget reservation. Trial-covered records are created this way, and unlike pending they carry no reservation to expire; both become settled on confirm.'
+                  payment_method:
+                    type: string
+                  paid_at:
+                    type:
+                    - string
+                    - 'null'
+                    format: date-time
+                  dac_amount_total:
+                    type: number
+                    description: Sum of dac_amount over every row for this DD.
+                  payments:
+                    type: array
+                    description: Per-component rows, in a stable order.
+                    items:
+                      type: object
+                      properties:
+                        payment_id:
+                          type: string
+                          format: uuid
+                        cost_component:
+                          type: string
+                          description: Which charge this row is. A DD/EE record uses base_fee and premium; other domains use their own (ara_observation, asa_subscribe, ise_session, retention_sub, sdac_session, tsl_tool). Treat the set as open.
+                        dac_amount:
+                          type: number
+                        settlement_status:
+                          type: string
+                          enum:
+                          - pending
+                          - unreserved
+                          - failed
+                          - released
+                          - settled
+                          description: unreserved = created without a budget reservation (Trial-covered); becomes settled on confirm.
+                        payment_source:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+      operationId: getV1PaymentByDdIdStatus
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+components:
+  securitySchemes:
+    AgentToken:
+      type: http
+      scheme: bearer
+      description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in the Authorization header using the Bearer scheme, followed by the issued token value.
+    DAPSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie issued after DAP login
+externalDocs:
+  description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
+  url: https://api.decision-anchor.com/llms.txt
+x-refined-from:
+- decision-anchor-com-openapi.json
+- decision-anchor-com-openapi.yml

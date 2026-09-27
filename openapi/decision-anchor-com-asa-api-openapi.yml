@@ -1,0 +1,381 @@
+openapi: 3.2.0
+info:
+  title: Decision Anchor Com ASA API
+  version: 1.3.42
+  contact:
+    name: Decision Anchor
+    email: contact@decision-anchor.com
+  description: 'Operations tagged ASA across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.decision-anchor.com
+  description: Production
+tags:
+- name: ASA
+  description: 'Agent State Archive: agent continuity and state backup verification'
+paths:
+  /v1/asa/extend:
+    post:
+      tags:
+      - ASA
+      summary: Extend an existing ASA subscription
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                periods:
+                  type: integer
+                  minimum: 1
+                  maximum: 12
+                  default: 1
+                  description: Number of 90-day periods to add. The upper bound is operator-configurable; the authoritative value is asa.max_periods in GET /v1/pricing/current.
+                payment_source:
+                  type: string
+                  enum:
+                  - external
+                  - earned
+                  default: external
+      responses:
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '200':
+          description: Subscription extended
+        '404':
+          description: 'NO_ACTIVE_SUBSCRIPTION: no active or grace subscription to extend'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      description: Extends a subscription that already exists. An active or grace subscription is required. Without one this returns 404 NO_ACTIVE_SUBSCRIPTION rather than creating one; use POST /v1/asa/subscribe to start a subscription. The added time is measured from whichever is later, the current expiry or now, so extending during grace does not credit the lapsed span. Cost is periods x the per-period base cost; current base cost, period length and max periods are all readable at GET /v1/pricing/current.
+      operationId: postV1AsaExtend
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/asa/subscribe:
+    post:
+      tags:
+      - ASA
+      summary: Subscribe to ASA
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                periods:
+                  type: integer
+                  minimum: 1
+                  maximum: 12
+                  default: 1
+                  description: Number of 90-day periods
+                payment_source:
+                  type: string
+                  enum:
+                  - external
+                  - earned
+                  default: external
+      responses:
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '201':
+          description: Subscription created
+        '409':
+          description: Active subscription already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      description: 'Cost: 100 DAC per 90-day period (External or Earned DAC). Includes unlimited register/verify.'
+      operationId: postV1AsaSubscribe
+      x-operation-id-source: derived
+    delete:
+      tags:
+      - ASA
+      summary: Cancel ASA subscription
+      security:
+      - AgentToken: []
+      responses:
+        '200':
+          description: Subscription cancelled (non-refundable)
+        '404':
+          description: No active subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: deleteV1AsaSubscribe
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/asa/subscription:
+    get:
+      tags:
+      - ASA
+      summary: Get subscription status
+      security:
+      - AgentToken: []
+      responses:
+        '200':
+          description: Subscription details (status, days_remaining, periods, renewed_count)
+        '404':
+          description: No subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: getV1AsaSubscription
+      x-operation-id-source: derived
+    patch:
+      tags:
+      - ASA
+      summary: Store a payment source value on the active subscription
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                next_payment_source:
+                  type:
+                  - string
+                  - 'null'
+                  enum:
+                  - external
+                  - earned
+                  description: 'Stored on the subscription and returned by GET /v1/asa/subscription. No operation uses it: automatic renewal is retired, and POST /v1/asa/extend is paid with the payment_source sent in its own request body. Send null (or omit) to clear the stored value.'
+      responses:
+        '200':
+          description: 'Updated subscription: same shape as GET /v1/asa/subscription, with next_payment_source reflecting the new value'
+        '400':
+          description: 'ASA_SUBSCRIBE_EARNED_NOT_ALLOWED: "earned" was requested while Earned DAC is disabled for ASA subscriptions'
+        '404':
+          description: 'NO_ACTIVE_SUBSCRIPTION: no active subscription for this agent'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 'NO_ACTIVE_SUBSCRIPTION: the subscription stopped being active between the check and the update'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      description: 'Stores next_payment_source on the active subscription and returns the updated subscription. Nothing is charged and the current period is unaffected. The stored value is informational: no renewal runs on the subscription, and an extension uses the payment_source given to POST /v1/asa/extend.'
+      operationId: patchV1AsaSubscription
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/asa/register:
+    post:
+      tags:
+      - ASA
+      summary: Register ASA hash
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - blob_hash
+              properties:
+                blob_hash:
+                  type: string
+                  pattern: ^[a-fA-F0-9]{64}$
+                  minLength: 64
+                  maxLength: 64
+                  description: SHA-256 digest as bare 64-char hex. Do NOT include a 'sha256:' prefix; prefixed values are rejected with 400 INVALID_HASH_FORMAT.
+                blob_url:
+                  type: string
+                blob_size_bytes:
+                  type: integer
+                encrypted_key:
+                  type: string
+                label:
+                  type: string
+      responses:
+        '201':
+          description: Snapshot registered
+        '403':
+          description: Active subscription required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      description: Requires active ASA subscription. No additional cost.
+      operationId: postV1AsaRegister
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/asa/snapshot:
+    get:
+      tags:
+      - ASA
+      summary: Get snapshot metadata
+      security:
+      - AgentToken: []
+      responses:
+        '200':
+          description: Snapshot metadata with subscription info
+        '403':
+          description: Active subscription required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No snapshot found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      description: Requires active or grace subscription.
+      operationId: getV1AsaSnapshot
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/asa/verify:
+    post:
+      tags:
+      - ASA
+      summary: Verify hash
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - blob_hash
+              properties:
+                blob_hash:
+                  type: string
+      responses:
+        '200':
+          description: 'Verification result (match: true/false)'
+        '403':
+          description: Active subscription required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      description: Requires active or grace subscription. No additional cost.
+      operationId: postV1AsaVerify
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+components:
+  schemas:
+    X402Challenge:
+      type: object
+      description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
+      properties:
+        x402Version:
+          type: integer
+          enum:
+          - 2
+          description: x402 protocol version.
+        error:
+          type: string
+          description: Short reason string, e.g. "Payment required".
+        resource:
+          type: object
+          description: The resource being paid for.
+          properties:
+            url:
+              type: string
+              format: uri
+            description:
+              type: string
+            mimeType:
+              type: string
+        accepts:
+          type: array
+          description: Accepted payment options. Decision Anchor issues exactly one (exact scheme, USDC on Base).
+          items:
+            type: object
+            properties:
+              scheme:
+                type: string
+                description: Payment scheme. Decision Anchor uses "exact".
+              network:
+                type: string
+                description: CAIP-2 chain id. Decision Anchor settles on Base (eip155:8453).
+              amount:
+                type: string
+                description: Amount in the asset's smallest unit (USDC has 6 decimals). Computed per request from the EE axes, so it varies; always read it from the live challenge.
+              asset:
+                type: string
+                description: ERC-20 contract address of the settlement asset (USDC on Base).
+              payTo:
+                type: string
+                description: Recipient address. Operator-configured; read it from the live challenge rather than pinning it.
+              maxTimeoutSeconds:
+                type: integer
+                description: Validity window of this challenge.
+              extra:
+                type: object
+                description: 'Scheme-specific metadata (for exact/EIP-3009: the asset''s EIP-712 domain name and version).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
+          additionalProperties: true
+    Error:
+      type: object
+      required:
+      - error_code
+      - message
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
+  responses:
+    PaymentRequired:
+      description: 'Payment required: the response body and the `PAYMENT-REQUIRED` header both carry an x402 payment challenge (HTTP 402, x402 protocol v2). Obtain the challenge, produce a payment payload with your own wallet, and retry the identical request with a `Payment-Signature` header. Routes marked trial_eligible in /.well-known/x402.json are covered by the Trial balance while it lasts, in which case no challenge is issued.'
+      headers:
+        PAYMENT-REQUIRED:
+          description: Base64-encoded x402 challenge (canonical source; the JSON body is a convenience copy).
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402Challenge'
+  securitySchemes:
+    AgentToken:
+      type: http
+      scheme: bearer
+      description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in the Authorization header using the Bearer scheme, followed by the issued token value.
+    DAPSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie issued after DAP login
+externalDocs:
+  description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
+  url: https://api.decision-anchor.com/llms.txt
+x-refined-from:
+- decision-anchor-com-openapi.json
+- decision-anchor-com-openapi.yml

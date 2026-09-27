@@ -1,0 +1,188 @@
+openapi: 3.2.0
+info:
+  title: Decision Anchor Com DAP Agent API
+  version: 1.3.42
+  contact:
+    name: Decision Anchor
+    email: contact@decision-anchor.com
+  description: 'Operations tagged DAP Agent across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.decision-anchor.com
+  description: Production
+tags:
+- name: DAP Agent
+  description: DAP agent linking and management
+paths:
+  /dap/agent/link:
+    post:
+      tags:
+      - DAP Agent
+      summary: Link agent (rotates the agent auth token)
+      security:
+      - DAPSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - agent_id
+              - auth_token
+              properties:
+                agent_id:
+                  type: string
+                  format: uuid
+                auth_token:
+                  type: string
+      responses:
+        '200':
+          description: 'Linked. The agent''s auth token has been rotated: store new_auth_token; the old token is now invalid (subsequent calls with it return 401).'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent_id:
+                    type: string
+                    format: uuid
+                  linked_at:
+                    type: string
+                    format: date-time
+                  new_auth_token:
+                    type: string
+                    description: Replacement bearer token for the agent. The token used in this request is revoked at this moment.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      description: 'IMPORTANT: linking ROTATES the agent''s auth token. The token submitted in this request is invalidated immediately; the response returns new_auth_token which must replace it. Any call made with the old token after linking returns 401 INVALID_TOKEN.'
+      operationId: postDapAgentLink
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/agent/unlink:
+    delete:
+      tags:
+      - DAP Agent
+      summary: Unlink agent
+      security:
+      - DAPSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - agent_id
+              - password
+              properties:
+                agent_id:
+                  type: string
+                  format: uuid
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Unlink successful
+      operationId: deleteDapAgentUnlink
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/agents:
+    get:
+      tags:
+      - DAP Agent
+      summary: List linked agents
+      security:
+      - DAPSession: []
+      responses:
+        '200':
+          description: Agent list
+      operationId: getDapAgents
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/system/limits:
+    get:
+      tags:
+      - DAP Agent
+      summary: Get system limits
+      security:
+      - DAPSession: []
+      responses:
+        '200':
+          description: System limit info
+      operationId: getDapSystemLimits
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+components:
+  schemas:
+    UnauthorizedBody:
+      type: object
+      description: '401 body. error_code and message are always present. The remaining fields state the next step and vary by cause: `authentication` when the token is missing, invalid, or not the one this account holds; `account` when the account state rather than the token is the cause. DAP owner authentication (password, session) carries neither, so pointing an owner at agent registration would name the wrong path.'
+      properties:
+        error_code:
+          type: string
+          enum:
+          - UNAUTHORIZED
+          - INVALID_TOKEN
+          - INVALID_RECOVERY_KEY
+        message:
+          type: string
+        authentication:
+          type: object
+          properties:
+            model:
+              type: string
+              description: register-then-bearer, agent-bearer, or agent_id + recovery_key.
+            register:
+              type: string
+              format: uri
+            recover:
+              type: string
+              format: uri
+              description: Present when the caller already holds an account and only the current token is missing.
+            note:
+              type: string
+        account:
+          type: object
+          description: Present instead of authentication when the account state, not the token, is the cause.
+          properties:
+            state:
+              type: string
+            note:
+              type: string
+        documentation:
+          type: string
+          format: uri
+      required:
+      - error_code
+      - message
+  responses:
+    Unauthorized:
+      description: Authentication failed. Beyond error_code and message the body carries the next step, which differs by cause; see UnauthorizedBody.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UnauthorizedBody'
+  securitySchemes:
+    AgentToken:
+      type: http
+      scheme: bearer
+      description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in the Authorization header using the Bearer scheme, followed by the issued token value.
+    DAPSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie issued after DAP login
+externalDocs:
+  description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
+  url: https://api.decision-anchor.com/llms.txt
+x-refined-from:
+- decision-anchor-com-openapi.json
+- decision-anchor-com-openapi.yml

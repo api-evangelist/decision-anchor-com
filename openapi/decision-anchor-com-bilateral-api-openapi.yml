@@ -1,0 +1,375 @@
+openapi: 3.2.0
+info:
+  title: Decision Anchor Com Bilateral API
+  version: 1.3.42
+  contact:
+    name: Decision Anchor
+    email: contact@decision-anchor.com
+  description: 'Operations tagged Bilateral across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.decision-anchor.com
+  description: Production
+tags:
+- name: Bilateral
+  description: 'Bilateral DD: multi-party agreement records'
+paths:
+  /v1/dd/bilateral/propose:
+    post:
+      tags:
+      - Bilateral
+      summary: Propose bilateral agreement
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - counterparty_agent_id
+              - dd
+              - ee
+              properties:
+                counterparty_agent_id:
+                  type: string
+                  format: uuid
+                dd:
+                  $ref: '#/components/schemas/DDInput'
+                ee:
+                  $ref: '#/components/schemas/EEInput'
+                continuity:
+                  type: object
+                  description: Lineage link. Only parent_dd_id is read; other keys are ignored. The parent DD must belong to the same agent.
+                  properties:
+                    parent_dd_id:
+                      type: string
+                      format: uuid
+                request_id:
+                  type: string
+                  format: uuid
+                  description: Optional client-generated idempotency key. MUST be a fresh UUID for every call. Reusing one of your own values returns your earlier result instead of creating a new record; the key is scoped to your agent_id, so a value another agent used never returns their record. Generate with crypto.randomUUID() or an equivalent.
+      responses:
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '400':
+          description: Request validation failed. Codes include MISSING_FIELD, INVALID_ENUM, UNKNOWN_FIELD, and DECLARATION_MODE_MISMATCH (dd.dd_declaration_mode was a valid enum value but not bilateral; this route creates bilateral declarations only).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '201':
+          description: Proposal created
+      operationId: postV1DdBilateralPropose
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/dd/bilateral/{agreement_id}/respond:
+    post:
+      tags:
+      - Bilateral
+      summary: Accept or reject bilateral agreement
+      security:
+      - AgentToken: []
+      parameters:
+      - name: agreement_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - accept
+              properties:
+                accept:
+                  type: boolean
+      responses:
+        '200':
+          description: Response recorded
+      operationId: postV1DdBilateralByAgreementIdRespond
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/dd/bilateral/received:
+    get:
+      tags:
+      - Bilateral
+      summary: List received proposals
+      security:
+      - AgentToken: []
+      parameters:
+      - name: all
+        in: query
+        schema:
+          type: string
+          enum:
+          - 'true'
+          - 'false'
+        description: Include all statuses
+      responses:
+        '200':
+          description: Proposal list
+      operationId: getV1DdBilateralReceived
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/dd/bilateral/sent:
+    get:
+      tags:
+      - Bilateral
+      summary: List sent proposals
+      security:
+      - AgentToken: []
+      responses:
+        '200':
+          description: Proposal list
+      operationId: getV1DdBilateralSent
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+components:
+  schemas:
+    DDInput:
+      type: object
+      required:
+      - dd_unit_type
+      - dd_declaration_mode
+      - decision_type
+      - decision_action_type
+      - origin_context_type
+      - selection_state
+      properties:
+        dd_unit_type:
+          type: string
+          enum:
+          - single
+          - batch
+          description: 'How many decisions this record covers. single: one decision. batch: a set of decisions you declare as one unit.'
+        dd_declaration_mode:
+          type: string
+          enum:
+          - self_declared
+          - bilateral
+          - multi_party
+          description: 'Who declares. self_declared: you alone (the only value POST /v1/dd/create accepts). bilateral: you and one counterparty, created through POST /v1/dd/bilateral/propose. multi_party: reserved; not accepted on either route.'
+        decision_type:
+          type: string
+          enum:
+          - internal_service
+          - external_interaction
+          - self_attestation
+          description: 'What the decision concerns. internal_service: an operation inside your own platform or service. external_interaction: an exchange with a party or system outside it (a payment, a delegation, an agreement). self_attestation: a statement about your own state or intent rather than an action on anything else. DA records the value you send and does not check it.'
+        decision_action_type:
+          type: string
+          enum:
+          - execute
+          - hold
+          - reject
+          - depend
+          - approve
+          description: 'What the decision did: execute (carried out), hold (kept pending), reject (declined), depend (deferred to another decision or party), approve (authorized something else to proceed).'
+        origin_context_type:
+          type: string
+          enum:
+          - internal
+          - external
+          - self
+          - mixed
+          description: 'What set the decision in motion. internal: your platform or orchestrator. external: an outside party or event. self: your own initiative. mixed: more than one of these. DA records the value you send and does not check it.'
+        selection_state:
+          type: string
+          enum:
+          - SELECTED
+          - REJECTED
+          - ABORTED
+          - SILENT
+          - NON_DECISION
+          description: 'How the selection ended: SELECTED (a choice was made), REJECTED (the options were declined), ABORTED (the process stopped before a choice), SILENT (no response was given), NON_DECISION (the situation was left undecided on purpose). Every value is a valid declaration, including the ones where nothing was carried out.'
+        selection_scope:
+          type: string
+          enum:
+          - single_target
+          - multi_target
+          - chain_scope
+          - global
+          description: Optional.
+        decision_at:
+          type: string
+          format: date-time
+          description: 'Optional. The time the agent itself decided, as an ISO 8601 timestamp. The server normalizes it to UTC and stores the normalized value, which is also what enters integrity_hash; send it in any valid offset and read back the stored value with GET /v1/dd/{dd_id}. It must not be later than the anchoring time: a later value is rejected with 400 DECISION_AT_IN_FUTURE. Omit it and no decision time is recorded. The distance between decision_at and anchored_at is derived, never stored. When the time-alignment credit is enabled and that gap is within the configured window, Earned DAC is credited at confirm (confirm response sync_reward); current window, amount and whether it is enabled: GET /v1/pricing/current sync_reward.'
+        parent_dd_id:
+          type: string
+          format: uuid
+    EEInput:
+      type: object
+      description: The four axis fields are required unless ee_preset is provided (a preset expands into all four).
+      required:
+      - ee_retention_period
+      - ee_integrity_verification_level
+      - ee_disclosure_format_policy
+      - ee_responsibility_scope
+      properties:
+        ee_preset:
+          type: string
+          description: 'Optional EE preset name. Expands into the four required EE axes and overrides them when both are sent. The preset list is operator-managed; fetch active presets via GET /v1/pricing/ee-presets (currently EE_basic, EE_standard, EE_high). Unknown name: 400 INVALID_EE_PRESET; disabled: 400 EE_PRESET_DISABLED. Accepted on POST /v1/dd/create only; the bilateral propose path rejects this key (400 UNKNOWN_FIELD).'
+        ee_retention_period:
+          type: string
+          enum:
+          - short
+          - medium
+          - long
+          - extreme_long
+          - indefinite
+          description: 'Retention selection. All five values are sent in this one field, but they are not one ladder. short, medium and long are the retention axis; their add is priced along the axis and long is one of the multiplier conditions. extreme_long (3,650 days / 10 years, 100 DAC one-time) and indefinite (permanent, no axis add) are overlay options that sit on top of the axis rather than extending it, so neither carries an axis value for the ''Retention = Long'' multiplier condition to match. indefinite is declared but not currently available: selecting it is rejected. Current adds and availability: GET /v1/pricing/current.'
+        ee_integrity_verification_level:
+          type: string
+          enum:
+          - basic
+          - enhanced
+          - certifiable
+        ee_disclosure_format_policy:
+          type: string
+          enum:
+          - internal
+          - shareable
+          - exportable
+        ee_responsibility_scope:
+          type: string
+          enum:
+          - minimal
+          - standard
+          - extended
+        ee_direct_access_period:
+          type: string
+          pattern: ^[1-9]\d*[dmy]$
+          description: 'Optional: system default applied when omitted. Format like "30d", "12m", "1y" (d=days, m=months, y=years).'
+        ee_direct_access_quota:
+          type: integer
+          minimum: 0
+          description: 'Optional: system default applied when omitted. Non-negative integer.'
+        content_disclosure_scope:
+          type: string
+          enum:
+          - owner
+          - external
+          - public
+          default: owner
+          description: Pricing axis, optional, defaults to owner.
+        delegation_state:
+          type: string
+          enum:
+          - none
+          - partial
+          - full
+          default: none
+          description: Pricing axis, optional, defaults to none.
+        access_class:
+          type: string
+          enum:
+          - self_direct
+          - ara_only
+          - internal_only
+          description: Optional.
+    X402Challenge:
+      type: object
+      description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
+      properties:
+        x402Version:
+          type: integer
+          enum:
+          - 2
+          description: x402 protocol version.
+        error:
+          type: string
+          description: Short reason string, e.g. "Payment required".
+        resource:
+          type: object
+          description: The resource being paid for.
+          properties:
+            url:
+              type: string
+              format: uri
+            description:
+              type: string
+            mimeType:
+              type: string
+        accepts:
+          type: array
+          description: Accepted payment options. Decision Anchor issues exactly one (exact scheme, USDC on Base).
+          items:
+            type: object
+            properties:
+              scheme:
+                type: string
+                description: Payment scheme. Decision Anchor uses "exact".
+              network:
+                type: string
+                description: CAIP-2 chain id. Decision Anchor settles on Base (eip155:8453).
+              amount:
+                type: string
+                description: Amount in the asset's smallest unit (USDC has 6 decimals). Computed per request from the EE axes, so it varies; always read it from the live challenge.
+              asset:
+                type: string
+                description: ERC-20 contract address of the settlement asset (USDC on Base).
+              payTo:
+                type: string
+                description: Recipient address. Operator-configured; read it from the live challenge rather than pinning it.
+              maxTimeoutSeconds:
+                type: integer
+                description: Validity window of this challenge.
+              extra:
+                type: object
+                description: 'Scheme-specific metadata (for exact/EIP-3009: the asset''s EIP-712 domain name and version).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
+          additionalProperties: true
+    Error:
+      type: object
+      required:
+      - error_code
+      - message
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
+  responses:
+    PaymentRequired:
+      description: 'Payment required: the response body and the `PAYMENT-REQUIRED` header both carry an x402 payment challenge (HTTP 402, x402 protocol v2). Obtain the challenge, produce a payment payload with your own wallet, and retry the identical request with a `Payment-Signature` header. Routes marked trial_eligible in /.well-known/x402.json are covered by the Trial balance while it lasts, in which case no challenge is issued.'
+      headers:
+        PAYMENT-REQUIRED:
+          description: Base64-encoded x402 challenge (canonical source; the JSON body is a convenience copy).
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402Challenge'
+  securitySchemes:
+    AgentToken:
+      type: http
+      scheme: bearer
+      description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in the Authorization header using the Bearer scheme, followed by the issued token value.
+    DAPSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie issued after DAP login
+externalDocs:
+  description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
+  url: https://api.decision-anchor.com/llms.txt
+x-refined-from:
+- decision-anchor-com-openapi.json
+- decision-anchor-com-openapi.yml

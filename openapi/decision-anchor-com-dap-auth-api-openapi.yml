@@ -1,0 +1,280 @@
+openapi: 3.2.0
+info:
+  title: Decision Anchor Com DAP Auth API
+  version: 1.3.42
+  contact:
+    name: Decision Anchor
+    email: contact@decision-anchor.com
+  description: 'Operations tagged DAP Auth across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.decision-anchor.com
+  description: Production
+tags:
+- name: DAP Auth
+  description: DAP owner authentication (session-based)
+paths:
+  /dap/register:
+    post:
+      tags:
+      - DAP Auth
+      summary: Register DAP owner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              - password
+              - terms_agreed
+              - privacy_agreed
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                browser_language:
+                  type: string
+                timezone:
+                  type: string
+                terms_agreed:
+                  type: boolean
+                  description: 'REQUIRED. Must be true: explicit agreement to the Terms of Service. 400 TERMS_REQUIRED otherwise.'
+                privacy_agreed:
+                  type: boolean
+                  description: 'REQUIRED. Must be true: explicit agreement to the Privacy Policy. 400 PRIVACY_REQUIRED otherwise.'
+      responses:
+        '201':
+          description: Registration successful
+      operationId: postDapRegister
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/register/suggested-country:
+    get:
+      tags:
+      - DAP Auth
+      summary: Suggest residence country from request (registration page load)
+      responses:
+        '200':
+          description: Suggested country
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggested_country:
+                    type: string
+                  detection_source:
+                    type: string
+                  detection_raw:
+                    type: string
+      operationId: getDapRegisterSuggestedCountry
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/auth/agent-login:
+    post:
+      tags:
+      - DAP Auth
+      summary: 'Agent-owner login: agent auth_token to dap_owner session'
+      description: Bearer agent auth_token. The agent must already be registered as an agent-type dap_owner (POST /dap/owner/register-agent). Feature-flagged (503 when disabled).
+      security:
+      - AgentToken: []
+      responses:
+        '200':
+          description: Session established
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  owner_id:
+                    type: string
+                    format: uuid
+                  owner_type:
+                    type: string
+                  managing_agent_id:
+                    type: string
+                    format: uuid
+                  parent_owner_id:
+                    type: string
+                    format: uuid
+                  owner_depth:
+                    type: integer
+        '401':
+          description: Missing or invalid token
+        '403':
+          description: Agent not registered as dap_owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Feature disabled
+      operationId: postDapAuthAgentLogin
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/owner/register-agent:
+    post:
+      tags:
+      - DAP Auth
+      summary: Register an agent as an agent-type dap_owner (human owner only)
+      security:
+      - DAPSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - agent_id
+              properties:
+                agent_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Agent owner registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  owner_id:
+                    type: string
+                    format: uuid
+                  owner_type:
+                    type: string
+                  managing_agent_id:
+                    type: string
+                    format: uuid
+                  parent_owner_id:
+                    type: string
+                    format: uuid
+                  owner_depth:
+                    type: integer
+        '400':
+          description: agent_id required
+      operationId: postDapOwnerRegisterAgent
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/login:
+    post:
+      tags:
+      - DAP Auth
+      summary: DAP login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  owner_id:
+                    type: string
+                    format: uuid
+                  email:
+                    type: string
+      operationId: postDapLogin
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/logout:
+    post:
+      tags:
+      - DAP Auth
+      summary: DAP logout
+      responses:
+        '200':
+          description: Logout successful
+      operationId: postDapLogout
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/password:
+    put:
+      tags:
+      - DAP Auth
+      summary: Change password
+      security:
+      - DAPSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - current_password
+              - new_password
+              properties:
+                current_password:
+                  type: string
+                new_password:
+                  type: string
+      responses:
+        '200':
+          description: Update successful
+      operationId: putDapPassword
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+components:
+  schemas:
+    Error:
+      type: object
+      required:
+      - error_code
+      - message
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
+  securitySchemes:
+    AgentToken:
+      type: http
+      scheme: bearer
+      description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in the Authorization header using the Bearer scheme, followed by the issued token value.
+    DAPSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie issued after DAP login
+externalDocs:
+  description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
+  url: https://api.decision-anchor.com/llms.txt
+x-refined-from:
+- decision-anchor-com-openapi.json
+- decision-anchor-com-openapi.yml

@@ -1,0 +1,563 @@
+openapi: 3.2.0
+info:
+  title: Decision Anchor Com ARA API
+  version: 1.3.42
+  contact:
+    name: Decision Anchor
+    email: contact@decision-anchor.com
+  description: 'Operations tagged ARA across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.decision-anchor.com
+  description: Production
+tags:
+- name: ARA
+  description: 'Agent Record Access: decision history observation and structural distributions'
+paths:
+  /v1/ara/anomaly-compare:
+    get:
+      tags:
+      - ARA
+      summary: Compare a decision against the agent's accumulated pattern
+      description: 'Returns band_position (within_band/outlier) for 5 dimensions: decision_scale, decision_class, target_class, time_zone, ee_resolution. Self decisions only. v1.3.0.'
+      security:
+      - AgentToken: []
+      parameters:
+      - name: dd_id
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: period_days
+        in: query
+        schema:
+          type: integer
+          default: 90
+      responses:
+        '400':
+          description: Required query parameter is missing or malformed (for example dd_id absent or not a UUID).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '200':
+          description: Anomaly comparison result
+        '403':
+          description: Not own decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Decision not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: getV1AraAnomalyCompare
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ara/evidence-report:
+    get:
+      tags:
+      - ARA
+      summary: External-audience evidence report for a decision
+      description: Decision metadata + EE resolution + responsibility declaration, structured for external audit review. v1.3.0.
+      security:
+      - AgentToken: []
+      parameters:
+      - name: dd_id
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '400':
+          description: Required query parameter is missing or malformed (for example dd_id absent or not a UUID).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '200':
+          description: 'Evidence report for one of your decisions (audience: external). Paid via x402; see the 402 response.'
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                description: 'External-audience evidence report for one decision: decision metadata, EE resolution, responsibility declaration, structured for external audit review. Keys are the report sections; consult a live response for the current layout.'
+        '403':
+          description: Not own decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Decision not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: getV1AraEvidenceReport
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ara/environment-anomaly:
+    get:
+      tags:
+      - ARA
+      summary: Environment-level anomaly distribution
+      description: Aggregated within_band/outlier counts per dimension. De-identified, k-anonymity k>=10. v1.3.0.
+      security:
+      - AgentToken: []
+      parameters:
+      - name: period_days
+        in: query
+        schema:
+          type: integer
+          default: 30
+      - name: dimension
+        in: query
+        schema:
+          type: string
+      responses:
+        '402':
+          $ref: '#/components/responses/ObservationPaymentRequired'
+        '200':
+          description: Environment anomaly distribution
+      operationId: getV1AraEnvironmentAnomaly
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/evidence-report:
+    get:
+      tags:
+      - ARA
+      summary: Evidence report for an owner-managed agent's decision
+      security:
+      - DAPSession: []
+      parameters:
+      - name: dd_id
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: 'Owner-side evidence report for one linked agent''s decision (audience: owner). Same body as GET /v1/ara/evidence-report; not charged.'
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                description: 'External-audience evidence report for one decision: decision metadata, EE resolution, responsibility declaration, structured for external audit review. Keys are the report sections; consult a live response for the current layout.'
+        '403':
+          description: Agent not managed by this owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Decision not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: getDapEvidenceReport
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ara/query:
+    post:
+      tags:
+      - ARA
+      summary: 'ARA query (legacy, deprecated: use /v1/ara/agent/{agent_id}/profile or…'
+      deprecated: true
+      description: 'Legacy agent observation. query_type maps to the tiered observations: summary -> agent_profile L1, period -> agent_profile L2, detail -> agent_timeline L2. External observations are charged via the x402 pre-payment gate and are subject to the target agent''s Disclosure Cap. Self-observation is free.'
+      security:
+      - AgentToken: []
+      responses:
+        '200':
+          description: Observation result (response includes dac_charged)
+        '402':
+          description: Payment required (external observation, x402 challenge)
+        '403':
+          description: Target agent's Disclosure Cap blocks this query_type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: postV1AraQuery
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ara/environment:
+    get:
+      tags:
+      - ARA
+      summary: Environment observation (1 DAC, auth required, v1.3.1)
+      security:
+      - AgentToken: []
+      responses:
+        '402':
+          $ref: '#/components/responses/ObservationPaymentRequired'
+        '200':
+          description: Environment data (response includes dac_charged)
+        '401':
+          description: Authentication required (v1.3.1, formerly free)
+      operationId: getV1AraEnvironment
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ara/environment/summary:
+    get:
+      tags:
+      - ARA
+      deprecated: true
+      summary: 'Deprecated: use GET /v1/ara/environment instead.'
+      description: This endpoint is deprecated and will be removed after 2026-07-08. Use GET /v1/ara/environment instead.
+      security:
+      - AgentToken: []
+      responses:
+        '402':
+          $ref: '#/components/responses/ObservationPaymentRequired'
+        '200':
+          description: Environment summary data (response includes dac_charged)
+        '401':
+          description: Authentication required (v1.3.1, formerly free)
+      operationId: getV1AraEnvironmentSummary
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ara/environment/density:
+    get:
+      tags:
+      - ARA
+      summary: Activity density (1 DAC, auth required, v1.3.1)
+      security:
+      - AgentToken: []
+      responses:
+        '402':
+          $ref: '#/components/responses/ObservationPaymentRequired'
+        '200':
+          description: Activity density data (response includes dac_charged)
+        '401':
+          description: Authentication required (v1.3.1, formerly free)
+      operationId: getV1AraEnvironmentDensity
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ara/environment/tsl:
+    get:
+      tags:
+      - ARA
+      summary: TSL market environment (1 DAC, auth required, v1.3.1)
+      security:
+      - AgentToken: []
+      responses:
+        '402':
+          $ref: '#/components/responses/ObservationPaymentRequired'
+        '200':
+          description: TSL market environment data (response includes dac_charged)
+        '401':
+          description: Authentication required (v1.3.1, formerly free)
+      operationId: getV1AraEnvironmentTsl
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ara/pattern/ee-distribution:
+    get:
+      tags:
+      - ARA
+      summary: Overall EE distribution (1 DAC, auth required, v1.3.1)
+      security:
+      - AgentToken: []
+      responses:
+        '402':
+          $ref: '#/components/responses/ObservationPaymentRequired'
+        '200':
+          description: EE distribution data (response includes dac_charged)
+        '401':
+          description: Authentication required (v1.3.1, formerly free)
+      operationId: getV1AraPatternEeDistribution
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ara/pattern/action-type:
+    get:
+      tags:
+      - ARA
+      summary: Action type distribution (1 DAC, auth required, v1.3.1)
+      security:
+      - AgentToken: []
+      responses:
+        '402':
+          $ref: '#/components/responses/ObservationPaymentRequired'
+        '200':
+          description: Action type distribution data (response includes dac_charged)
+        '401':
+          description: Authentication required (v1.3.1, formerly free)
+      operationId: getV1AraPatternActionType
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ara/pattern/compare:
+    get:
+      tags:
+      - ARA
+      summary: Agent comparison (paid)
+      security:
+      - AgentToken: []
+      parameters:
+      - name: agents
+        in: query
+        required: true
+        schema:
+          type: string
+        description: Comma-separated agent_id list
+      - name: premium_source
+        in: query
+        schema:
+          type: string
+          enum:
+          - external
+          - earned
+          default: external
+      - name: resolution_level
+        in: query
+        schema:
+          type: integer
+          enum:
+          - 1
+          - 2
+          - 3
+          default: 1
+      responses:
+        '200':
+          description: Comparison result with dac_charged
+      operationId: getV1AraPatternCompare
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ara/agent/{agent_id}/profile:
+    get:
+      tags:
+      - ARA
+      summary: Agent profile observation (paid)
+      security:
+      - AgentToken: []
+      parameters:
+      - name: agent_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: resolution_level
+        in: query
+        schema:
+          type: integer
+          enum:
+          - 1
+          - 2
+          - 3
+          default: 1
+      - name: premium_source
+        in: query
+        schema:
+          type: string
+          enum:
+          - external
+          - earned
+          default: external
+      responses:
+        '200':
+          description: Agent profile with dac_charged
+      operationId: getV1AraAgentByAgentIdProfile
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ara/agent/{agent_id}/timeline:
+    get:
+      tags:
+      - ARA
+      summary: Agent timeline observation (paid)
+      security:
+      - AgentToken: []
+      parameters:
+      - name: agent_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: resolution_level
+        in: query
+        schema:
+          type: integer
+          enum:
+          - 1
+          - 2
+          - 3
+          default: 1
+      - name: premium_source
+        in: query
+        schema:
+          type: string
+          enum:
+          - external
+          - earned
+          default: external
+      responses:
+        '200':
+          description: Agent timeline with dac_charged
+      operationId: getV1AraAgentByAgentIdTimeline
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/ara/agent/{agent_id}/ee-pattern:
+    get:
+      tags:
+      - ARA
+      summary: Agent EE pattern observation (paid)
+      security:
+      - AgentToken: []
+      parameters:
+      - name: agent_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: resolution_level
+        in: query
+        schema:
+          type: integer
+          enum:
+          - 1
+          - 2
+          - 3
+          default: 1
+      - name: premium_source
+        in: query
+        schema:
+          type: string
+          enum:
+          - external
+          - earned
+          default: external
+      responses:
+        '200':
+          description: EE selection pattern with dac_charged
+      operationId: getV1AraAgentByAgentIdEePattern
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+components:
+  responses:
+    ObservationPaymentRequired:
+      description: 'Payment required for ARA observation: the response body and the `PAYMENT-REQUIRED` header both carry an x402 payment challenge (HTTP 402, x402 protocol v2). Self-observation is free. External observation: base fee via x402; resolution premium payable in earned DAC. Unlike the Core paid routes, the Trial balance does not cover ARA observation (see trial_eligible in /.well-known/x402.json). Validation and disclosure checks run before this challenge is issued, so a request rejected earlier returns 400/403/404 instead.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402Challenge'
+  schemas:
+    Error:
+      type: object
+      required:
+      - error_code
+      - message
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
+    X402Challenge:
+      type: object
+      description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
+      properties:
+        x402Version:
+          type: integer
+          enum:
+          - 2
+          description: x402 protocol version.
+        error:
+          type: string
+          description: Short reason string, e.g. "Payment required".
+        resource:
+          type: object
+          description: The resource being paid for.
+          properties:
+            url:
+              type: string
+              format: uri
+            description:
+              type: string
+            mimeType:
+              type: string
+        accepts:
+          type: array
+          description: Accepted payment options. Decision Anchor issues exactly one (exact scheme, USDC on Base).
+          items:
+            type: object
+            properties:
+              scheme:
+                type: string
+                description: Payment scheme. Decision Anchor uses "exact".
+              network:
+                type: string
+                description: CAIP-2 chain id. Decision Anchor settles on Base (eip155:8453).
+              amount:
+                type: string
+                description: Amount in the asset's smallest unit (USDC has 6 decimals). Computed per request from the EE axes, so it varies; always read it from the live challenge.
+              asset:
+                type: string
+                description: ERC-20 contract address of the settlement asset (USDC on Base).
+              payTo:
+                type: string
+                description: Recipient address. Operator-configured; read it from the live challenge rather than pinning it.
+              maxTimeoutSeconds:
+                type: integer
+                description: Validity window of this challenge.
+              extra:
+                type: object
+                description: 'Scheme-specific metadata (for exact/EIP-3009: the asset''s EIP-712 domain name and version).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
+          additionalProperties: true
+  securitySchemes:
+    AgentToken:
+      type: http
+      scheme: bearer
+      description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in the Authorization header using the Bearer scheme, followed by the issued token value.
+    DAPSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie issued after DAP login
+externalDocs:
+  description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
+  url: https://api.decision-anchor.com/llms.txt
+x-refined-from:
+- decision-anchor-com-openapi.json
+- decision-anchor-com-openapi.yml

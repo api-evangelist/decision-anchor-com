@@ -1,0 +1,213 @@
+openapi: 3.2.0
+info:
+  title: Decision Anchor Com DAP DUR API
+  version: 1.3.42
+  contact:
+    name: Decision Anchor
+    email: contact@decision-anchor.com
+  description: 'Operations tagged DAP DUR across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.decision-anchor.com
+  description: Production
+tags:
+- name: DAP DUR
+  description: DAP owner DUR query
+paths:
+  /dap/dur/summary:
+    get:
+      tags:
+      - DAP DUR
+      summary: Owner DUR combined summary
+      security:
+      - DAPSession: []
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+        description: Start (inclusive). Date-only (YYYY-MM-DD) or ISO timestamp. Date boundaries are UTC.
+      - name: to
+        in: query
+        schema:
+          type: string
+        description: End. Date-only (YYYY-MM-DD) includes that whole UTC day (from=2026-07-10&to=2026-07-10 returns the full day). ISO timestamp is an exclusive upper bound.
+      - name: agent_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: DAC usage summary for the range.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: object
+                    properties:
+                      from:
+                        type: string
+                      to:
+                        type: string
+                  dd_count:
+                    type: integer
+                    description: core_dd rows anchored in range (includes settlement/tool-registration anchor DDs).
+                  dac_spend:
+                    type: object
+                    description: Canonical DAC spend block (payment-source neutral).
+                    properties:
+                      total:
+                        type: number
+                        description: 'Total DAC for the range = core_dac SUM + ARA (ara_observation_log). ARA has no core_dac rows (per-observation anchors would explode core_dd), so its spend is summed in separately. Invariant: total == dd_ee+ara+ise+sdac+tsl+asa == by_source sum.'
+                      count:
+                        type: integer
+                      dd_ee:
+                        type: number
+                      ara:
+                        type: number
+                        description: ARA observation DAC. Sourced from ara_observation_log (NOT core_dac; the 'ARA' cost_context_type label is unused, ara_observation_log is canonical). Includes base (always external) + premium (external or earned).
+                      ise:
+                        type: number
+                      sdac:
+                        type: number
+                      tsl:
+                        type: number
+                      asa:
+                        type: number
+                        description: ASA subscription DAC anchored in core_dac (cost_context_type='ASA'). Previously ASA was billing_payment-only and missing from this core_dac-based total.
+                      by_source:
+                        type: object
+                        description: 'Decomposition by payment source. Aggregated from billing_payment + ARA (ara_observation_log). ARA contributes: external += base + external-premium; earned += earned-premium (split by premium_source, NOT payment_mode. payment_mode is always ''external'' when charged and is not a source discriminator); trial += 0 (ARA has no trial fallback).'
+                        properties:
+                          trial:
+                            type: number
+                          external:
+                            type: number
+                          earned:
+                            type: number
+                  ara_observations:
+                    type: object
+                    description: ARA observation spend summary. ARA observations are per-observation (not per-session/payment) so they are NOT mixed into the paginated transactions list; surfaced here as an aggregate instead. Amounts are already included in dac_spend.total / by_source / fiat.approx_krw.
+                    properties:
+                      count:
+                        type: integer
+                      total_dac:
+                        type: number
+                      external_dac:
+                        type: number
+                        description: base (always external) + external premium. KRW-convertible portion.
+                      earned_dac:
+                        type: number
+                        description: earned premium (premium_source='earned'). No KRW (earned does not cross USDC).
+                  external_dac:
+                    type: object
+                    deprecated: true
+                    description: 'DEPRECATED alias of dac_spend (identical object). Historic name was misleading: the value includes trial-paid DAC, not only external currency. Use dac_spend.'
+                  earned_dac:
+                    type: object
+                    properties:
+                      received:
+                        type: number
+                      spent:
+                        type: number
+                      tx_count:
+                        type: integer
+                  fiat:
+                    type: object
+                    description: KRW is NOT stored in the ledger; computed at query time from external DAC spend x current config unit_price x rate. External payments only (earned/trial never cross USDC). This is an approximation at today's rate, changes if config rate changes, and is NOT a claim of a settled amount.
+                    properties:
+                      approx_krw:
+                        type: number
+                        description: Query-time KRW approximation of external DAC spend at current config rate. Includes ARA external spend (base + external premium); ARA earned premium excluded (no USDC crossing). Not a settled-amount claim; shifts if rate changes.
+                      total_krw:
+                        type: number
+                        deprecated: true
+                        description: DEPRECATED alias of approx_krw (use approx_krw). Value is now external-only; previously included earned.
+                      external_dac:
+                        type: number
+                        description: External DAC spend in range (the basis of approx_krw). Includes ARA external (base + external premium).
+                      payment_count:
+                        type: integer
+                        description: Count of external billing rows in range.
+                      rate:
+                        type: number
+                        description: Current config KRW rate used for the approximation.
+                      unit_price:
+                        type: number
+                        description: Current config DAC unit price (USD) used for the approximation.
+                  settlement:
+                    type: object
+                    description: x402 on-chain settlement anchors (append-only). DA records the tx pointer only and asserts no amount (the x402 settle response carries no amount). Verify on-chain by tx_hash.
+                    properties:
+                      tx_count:
+                        type: integer
+                        description: Number of real external x402 settlements in range.
+                      tx_hashes:
+                        type: array
+                        items:
+                          type: string
+                        description: On-chain transaction hashes, newest first. External verification anchor.
+      operationId: getDapDurSummary
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /dap/dur/export:
+    get:
+      tags:
+      - DAP DUR
+      summary: Owner CSV/JSON export
+      security:
+      - DAPSession: []
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+        description: Start (inclusive). Date-only (YYYY-MM-DD) or ISO timestamp. Date boundaries are UTC.
+      - name: to
+        in: query
+        schema:
+          type: string
+        description: End. Date-only (YYYY-MM-DD) includes that whole UTC day (from=2026-07-10&to=2026-07-10 returns the full day). ISO timestamp is an exclusive upper bound.
+      - name: agent_id
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: format
+        in: query
+        schema:
+          type: string
+          enum:
+          - csv
+          - json
+          default: csv
+      responses:
+        '200':
+          description: Export data
+      operationId: getDapDurExport
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+components:
+  securitySchemes:
+    AgentToken:
+      type: http
+      scheme: bearer
+      description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in the Authorization header using the Bearer scheme, followed by the issued token value.
+    DAPSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie issued after DAP login
+externalDocs:
+  description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
+  url: https://api.decision-anchor.com/llms.txt
+x-refined-from:
+- decision-anchor-com-openapi.json
+- decision-anchor-com-openapi.yml

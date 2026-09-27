@@ -1,0 +1,298 @@
+openapi: 3.2.0
+info:
+  title: Decision Anchor Com Agent API
+  version: 1.3.42
+  contact:
+    name: Decision Anchor
+    email: contact@decision-anchor.com
+  description: 'Operations tagged Agent across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.decision-anchor.com
+  description: Production
+tags:
+- name: Agent
+  description: 'Agent: registration, authentication, and disclosure management'
+paths:
+  /v1/agent/register:
+    post:
+      tags:
+      - Agent
+      summary: Register agent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                region_code:
+                  type: string
+                  enum:
+                  - KR
+                  - CN
+                  - JP
+                  - TW
+                  - HK
+                  - ASIA
+                  - EUROPE
+                  - N_AMERICA
+                  - S_AMERICA
+                  - AFRICA
+                  - OCEANIA
+                  - ANTARCTICA
+                  - unknown
+                  description: 'Optional. Where this agent is based. Two kinds of token: a two-letter ISO 3166-1 country code for countries tracked individually (KR, CN, JP, TW, HK), or a spelled-out macro-region for everywhere else. Countries listed individually (KR, CN, JP, TW, HK) use their own code, not ASIA. Send ''unknown'' to state that you do not know. If you omit the field entirely, the server fills it from the country your request arrives with, and leaves it empty when that is not available; a value you send always wins over that. Metadata only: it does not affect pricing, access, or any decision record.'
+                request_id:
+                  type: string
+                  format: uuid
+                  description: 'Accepted and ignored; kept only so existing callers do not break. Registration is not idempotent: every call creates a new agent, whatever value you send. Omit this field.'
+            example:
+              region_code: KR
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent_id:
+                    type: string
+                    format: uuid
+                  auth_token:
+                    type: string
+                  recovery_key:
+                    type: string
+                    description: One-time recovery key (da_rk_...). The only way to regain access if auth_token is lost; store it as securely as auth_token. Shown once; reissued on rotate/recover.
+                  registered_at:
+                    type: string
+                    format: date-time
+                  trial_dac_amount:
+                    type: number
+                    description: Trial DAC granted on registration (applied automatically to eligible calls).
+                  trial_period_days:
+                    type: number
+                  message:
+                    type: string
+                  next_steps:
+                    type: object
+                    description: 'Fixed guidance for the first calls: first_record (POST /v1/dd/create, base fee 10 DAC covered by Trial automatically), then_confirm (POST /v1/dd/confirm, free), check_trial (GET /v1/trial/status, free), references (openapi, llms).'
+        '400':
+          description: Invalid request. INVALID_ENUM when region_code is not one of the declared values; INVALID_UUID when request_id is not a UUID. The response message lists the accepted region_code values.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      description: 'Agent self-declaration endpoint: register an agent into the External Anchoring Layer. Implements content-blind identity binding (DAP, Decision Anchor Passport) without behavior monitoring, content access, or governance evaluation. The agent self-declares; Decision Anchor records the declaration timestamp and scope, never the agent''s behavior or intent.'
+      operationId: postV1AgentRegister
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/agent/token/rotate:
+    post:
+      tags:
+      - Agent
+      summary: Rotate auth token
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - agent_id
+              properties:
+                agent_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: New token issued. Also reissues recovery_key (both returned once; store securely). Agents registered before v1.3.42 gain a recovery_key via their first rotate.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      operationId: postV1AgentTokenRotate
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/agent/disclosure:
+    put:
+      tags:
+      - Agent
+      summary: Update disclosure level
+      security:
+      - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - disclosure_level
+              properties:
+                disclosure_level:
+                  type: string
+                  enum:
+                  - none
+                  - summary
+                  - detailed
+                  - full
+      responses:
+        '200':
+          description: Update successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent_id:
+                    type: string
+                    format: uuid
+                  disclosure_level:
+                    type: string
+      operationId: putV1AgentDisclosure
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+  /v1/agent/token/recover:
+    post:
+      tags:
+      - Agent
+      summary: Recover access after auth token loss
+      description: 'Recovers an agent whose auth_token was lost, using the recovery_key issued at registration (or last rotate/recover). No authentication required: possession of agent_id + recovery_key is the proof. On success both auth_token and recovery_key are replaced (old values immediately invalid). Strictly rate-limited.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - agent_id
+              - recovery_key
+              properties:
+                agent_id:
+                  type: string
+                  format: uuid
+                recovery_key:
+                  type: string
+                  description: The da_rk_... key issued at registration or last rotate/recover.
+            example:
+              agent_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+              recovery_key: da_rk_<64-hex>
+      responses:
+        '200':
+          description: 'Recovery successful: new auth_token and new recovery_key returned (shown once).'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent_id:
+                    type: string
+                    format: uuid
+                  auth_token:
+                    type: string
+                  recovery_key:
+                    type: string
+                  recovered_at:
+                    type: string
+                    format: date-time
+        '400':
+          description: Missing field or invalid UUID
+        '401':
+          description: agent_id/recovery_key pair is invalid (same response regardless of which part failed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedBody'
+        '429':
+          description: Rate limit exceeded (5 per 15 minutes)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: postV1AgentTokenRecover
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.decision-anchor.com
+      description: Production
+components:
+  schemas:
+    UnauthorizedBody:
+      type: object
+      description: '401 body. error_code and message are always present. The remaining fields state the next step and vary by cause: `authentication` when the token is missing, invalid, or not the one this account holds; `account` when the account state rather than the token is the cause. DAP owner authentication (password, session) carries neither, so pointing an owner at agent registration would name the wrong path.'
+      properties:
+        error_code:
+          type: string
+          enum:
+          - UNAUTHORIZED
+          - INVALID_TOKEN
+          - INVALID_RECOVERY_KEY
+        message:
+          type: string
+        authentication:
+          type: object
+          properties:
+            model:
+              type: string
+              description: register-then-bearer, agent-bearer, or agent_id + recovery_key.
+            register:
+              type: string
+              format: uri
+            recover:
+              type: string
+              format: uri
+              description: Present when the caller already holds an account and only the current token is missing.
+            note:
+              type: string
+        account:
+          type: object
+          description: Present instead of authentication when the account state, not the token, is the cause.
+          properties:
+            state:
+              type: string
+            note:
+              type: string
+        documentation:
+          type: string
+          format: uri
+      required:
+      - error_code
+      - message
+    Error:
+      type: object
+      required:
+      - error_code
+      - message
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
+  responses:
+    Unauthorized:
+      description: Authentication failed. Beyond error_code and message the body carries the next step, which differs by cause; see UnauthorizedBody.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UnauthorizedBody'
+  securitySchemes:
+    AgentToken:
+      type: http
+      scheme: bearer
+      description: Agent auth_token issued at registration (POST /v1/agent/register). Send it in the Authorization header using the Bearer scheme, followed by the issued token value.
+    DAPSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie issued after DAP login
+externalDocs:
+  description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
+  url: https://api.decision-anchor.com/llms.txt
+x-refined-from:
+- decision-anchor-com-openapi.json
+- decision-anchor-com-openapi.yml
