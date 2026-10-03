@@ -1,11 +1,11 @@
 openapi: 3.2.0
 info:
-  title: Decision Anchor Com Earned DAC API
+  title: 'Decision Anchor: The External Anchoring Layer for AI Agents…'
+  description: Decision Anchor is the External Anchoring Layer for AI agents, providing Content-blind Accountability for agent decisions, delegations, and disputes.
   version: 1.3.42
   contact:
     name: Decision Anchor
     email: contact@decision-anchor.com
-  description: 'Operations tagged Earned DAC across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
 servers:
 - url: https://api.decision-anchor.com
   description: Production
@@ -25,9 +25,6 @@ paths:
           description: Balance info
       operationId: getV1EarnedDacBalance
       x-operation-id-source: derived
-    servers:
-    - url: https://api.decision-anchor.com
-      description: Production
   /v1/earned-dac/ledger:
     get:
       tags:
@@ -52,9 +49,6 @@ paths:
           description: Ledger entries
       operationId: getV1EarnedDacLedger
       x-operation-id-source: derived
-    servers:
-    - url: https://api.decision-anchor.com
-      description: Production
 components:
   securitySchemes:
     AgentToken:
@@ -69,6 +63,3 @@ components:
 externalDocs:
   description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
   url: https://api.decision-anchor.com/llms.txt
-x-refined-from:
-- decision-anchor-com-openapi.json
-- decision-anchor-com-openapi.yml

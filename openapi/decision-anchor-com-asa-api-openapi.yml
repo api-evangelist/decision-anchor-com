@@ -1,11 +1,11 @@
 openapi: 3.2.0
 info:
-  title: Decision Anchor Com ASA API
+  title: 'Decision Anchor: The External Anchoring Layer for AI Agents…'
+  description: Decision Anchor is the External Anchoring Layer for AI agents, providing Content-blind Accountability for agent decisions, delegations, and disputes.
   version: 1.3.42
   contact:
     name: Decision Anchor
     email: contact@decision-anchor.com
-  description: 'Operations tagged ASA across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
 servers:
 - url: https://api.decision-anchor.com
   description: Production
@@ -53,9 +53,6 @@ paths:
       description: Extends a subscription that already exists. An active or grace subscription is required. Without one this returns 404 NO_ACTIVE_SUBSCRIPTION rather than creating one; use POST /v1/asa/subscribe to start a subscription. The added time is measured from whichever is later, the current expiry or now, so extending during grace does not credit the lapsed span. Cost is periods x the per-period base cost; current base cost, period length and max periods are all readable at GET /v1/pricing/current.
       operationId: postV1AsaExtend
       x-operation-id-source: derived
-    servers:
-    - url: https://api.decision-anchor.com
-      description: Production
   /v1/asa/subscribe:
     post:
       tags:
@@ -113,9 +110,6 @@ paths:
                 $ref: '#/components/schemas/Error'
       operationId: deleteV1AsaSubscribe
       x-operation-id-source: derived
-    servers:
-    - url: https://api.decision-anchor.com
-      description: Production
   /v1/asa/subscription:
     get:
       tags:
@@ -175,9 +169,6 @@ paths:
       description: 'Stores next_payment_source on the active subscription and returns the updated subscription. Nothing is charged and the current period is unaffected. The stored value is informational: no renewal runs on the subscription, and an extension uses the payment_source given to POST /v1/asa/extend.'
       operationId: patchV1AsaSubscription
       x-operation-id-source: derived
-    servers:
-    - url: https://api.decision-anchor.com
-      description: Production
   /v1/asa/register:
     post:
       tags:
@@ -220,9 +211,6 @@ paths:
       description: Requires active ASA subscription. No additional cost.
       operationId: postV1AsaRegister
       x-operation-id-source: derived
-    servers:
-    - url: https://api.decision-anchor.com
-      description: Production
   /v1/asa/snapshot:
     get:
       tags:
@@ -248,9 +236,6 @@ paths:
       description: Requires active or grace subscription.
       operationId: getV1AsaSnapshot
       x-operation-id-source: derived
-    servers:
-    - url: https://api.decision-anchor.com
-      description: Production
   /v1/asa/verify:
     post:
       tags:
@@ -281,10 +266,19 @@ paths:
       description: Requires active or grace subscription. No additional cost.
       operationId: postV1AsaVerify
       x-operation-id-source: derived
-    servers:
-    - url: https://api.decision-anchor.com
-      description: Production
 components:
+  responses:
+    PaymentRequired:
+      description: 'Payment required: the response body and the `PAYMENT-REQUIRED` header both carry an x402 payment challenge (HTTP 402, x402 protocol v2). Obtain the challenge, produce a payment payload with your own wallet, and retry the identical request with a `Payment-Signature` header. Routes marked trial_eligible in /.well-known/x402.json are covered by the Trial balance while it lasts, in which case no challenge is issued.'
+      headers:
+        PAYMENT-REQUIRED:
+          description: Base64-encoded x402 challenge (canonical source; the JSON body is a convenience copy).
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402Challenge'
   schemas:
     X402Challenge:
       type: object
@@ -351,18 +345,6 @@ components:
           type: string
         message:
           type: string
-  responses:
-    PaymentRequired:
-      description: 'Payment required: the response body and the `PAYMENT-REQUIRED` header both carry an x402 payment challenge (HTTP 402, x402 protocol v2). Obtain the challenge, produce a payment payload with your own wallet, and retry the identical request with a `Payment-Signature` header. Routes marked trial_eligible in /.well-known/x402.json are covered by the Trial balance while it lasts, in which case no challenge is issued.'
-      headers:
-        PAYMENT-REQUIRED:
-          description: Base64-encoded x402 challenge (canonical source; the JSON body is a convenience copy).
-          schema:
-            type: string
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/X402Challenge'
   securitySchemes:
     AgentToken:
       type: http
@@ -376,6 +358,3 @@ components:
 externalDocs:
   description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
   url: https://api.decision-anchor.com/llms.txt
-x-refined-from:
-- decision-anchor-com-openapi.json
-- decision-anchor-com-openapi.yml

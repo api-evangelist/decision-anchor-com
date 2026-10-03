@@ -1,11 +1,11 @@
 openapi: 3.2.0
 info:
-  title: Decision Anchor Com ISE API
+  title: 'Decision Anchor: The External Anchoring Layer for AI Agents…'
+  description: Decision Anchor is the External Anchoring Layer for AI agents, providing Content-blind Accountability for agent decisions, delegations, and disputes.
   version: 1.3.42
   contact:
     name: Decision Anchor
     email: contact@decision-anchor.com
-  description: 'Operations tagged ISE across 2 of this provider''s published API definitions: decision-anchor-com-openapi.json, decision-anchor-com-openapi.yml. Each path carries the servers of the definition it was published in.'
 servers:
 - url: https://api.decision-anchor.com
   description: Production
@@ -38,9 +38,6 @@ paths:
           description: ISE session started
       operationId: postV1IseEnter
       x-operation-id-source: derived
-    servers:
-    - url: https://api.decision-anchor.com
-      description: Production
   /v1/ise/status:
     get:
       tags:
@@ -53,9 +50,6 @@ paths:
           description: Session status
       operationId: getV1IseStatus
       x-operation-id-source: derived
-    servers:
-    - url: https://api.decision-anchor.com
-      description: Production
   /v1/ise/exit:
     post:
       tags:
@@ -70,10 +64,19 @@ paths:
           description: Session ended with DAC charge info
       operationId: postV1IseExit
       x-operation-id-source: derived
-    servers:
-    - url: https://api.decision-anchor.com
-      description: Production
 components:
+  responses:
+    PaymentRequired:
+      description: 'Payment required: the response body and the `PAYMENT-REQUIRED` header both carry an x402 payment challenge (HTTP 402, x402 protocol v2). Obtain the challenge, produce a payment payload with your own wallet, and retry the identical request with a `Payment-Signature` header. Routes marked trial_eligible in /.well-known/x402.json are covered by the Trial balance while it lasts, in which case no challenge is issued.'
+      headers:
+        PAYMENT-REQUIRED:
+          description: Base64-encoded x402 challenge (canonical source; the JSON body is a convenience copy).
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402Challenge'
   schemas:
     X402Challenge:
       type: object
@@ -130,18 +133,6 @@ components:
           type: object
           description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
           additionalProperties: true
-  responses:
-    PaymentRequired:
-      description: 'Payment required: the response body and the `PAYMENT-REQUIRED` header both carry an x402 payment challenge (HTTP 402, x402 protocol v2). Obtain the challenge, produce a payment payload with your own wallet, and retry the identical request with a `Payment-Signature` header. Routes marked trial_eligible in /.well-known/x402.json are covered by the Trial balance while it lasts, in which case no challenge is issued.'
-      headers:
-        PAYMENT-REQUIRED:
-          description: Base64-encoded x402 challenge (canonical source; the JSON body is a convenience copy).
-          schema:
-            type: string
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/X402Challenge'
   securitySchemes:
     AgentToken:
       type: http
@@ -155,6 +146,3 @@ components:
 externalDocs:
   description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
   url: https://api.decision-anchor.com/llms.txt
-x-refined-from:
-- decision-anchor-com-openapi.json
-- decision-anchor-com-openapi.yml
