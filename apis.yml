@@ -126,6 +126,8 @@ apis:
   humanURL: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
   baseURL: https://api.decision-anchor.com
   tags:
+  - Agents
+  tags_raw:
   - Agent
   properties:
   - type: OpenAPI
@@ -608,6 +610,8 @@ apis:
   humanURL: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
   baseURL: https://api.decision-anchor.com
   tags:
+  - Payments
+  tags_raw:
   - Payment
   properties:
   - type: OpenAPI
@@ -752,6 +756,9 @@ maintainers:
 - FN: APIs.json
   email: info@apis.io
 common:
+- type: CapabilityMap
+  url: capabilities/decision-anchor-com-capability-edges.yml
+  name: Decision Anchor Business Capability Map
 - type: Overlay
   url: overlays/decision-anchor-com-openapi-overlay.yaml
 - type: AgenticAccess
