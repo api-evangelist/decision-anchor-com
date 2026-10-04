@@ -209,13 +209,6 @@ paths:
       operationId: postV1AgentTokenRecover
       x-operation-id-source: derived
 components:
-  responses:
-    Unauthorized:
-      description: Authentication failed. Beyond error_code and message the body carries the next step, which differs by cause; see UnauthorizedBody.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/UnauthorizedBody'
   schemas:
     UnauthorizedBody:
       type: object
@@ -268,6 +261,13 @@ components:
           type: string
         message:
           type: string
+  responses:
+    Unauthorized:
+      description: Authentication failed. Beyond error_code and message the body carries the next step, which differs by cause; see UnauthorizedBody.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UnauthorizedBody'
   securitySchemes:
     AgentToken:
       type: http

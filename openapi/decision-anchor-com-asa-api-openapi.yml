@@ -280,6 +280,16 @@ components:
           schema:
             $ref: '#/components/schemas/X402Challenge'
   schemas:
+    Error:
+      type: object
+      required:
+      - error_code
+      - message
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
     X402Challenge:
       type: object
       description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
@@ -335,16 +345,6 @@ components:
           type: object
           description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
           additionalProperties: true
-    Error:
-      type: object
-      required:
-      - error_code
-      - message
-      properties:
-        error_code:
-          type: string
-        message:
-          type: string
   securitySchemes:
     AgentToken:
       type: http

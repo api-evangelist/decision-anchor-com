@@ -428,6 +428,16 @@ paths:
       x-operation-id-source: derived
 components:
   schemas:
+    Error:
+      type: object
+      required:
+      - error_code
+      - message
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
     X402Challenge:
       type: object
       description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
@@ -483,16 +493,6 @@ components:
           type: object
           description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
           additionalProperties: true
-    Error:
-      type: object
-      required:
-      - error_code
-      - message
-      properties:
-        error_code:
-          type: string
-        message:
-          type: string
   responses:
     ObservationPaymentRequired:
       description: 'Payment required for ARA observation: the response body and the `PAYMENT-REQUIRED` header both carry an x402 payment challenge (HTTP 402, x402 protocol v2). Self-observation is free. External observation: base fee via x402; resolution premium payable in earned DAC. Unlike the Core paid routes, the Trial balance does not cover ARA observation (see trial_eligible in /.well-known/x402.json). Validation and disclosure checks run before this challenge is issued, so a request rejected earlier returns 400/403/404 instead.'
