@@ -1,0 +1,12 @@
+{
+ "url": "https://api.decision-anchor.com/openapi.json",
+ "requested_url": "https://api.decision-anchor.com/openapi.json",
+ "status": 200,
+ "content_type": "application/json; charset=utf-8",
+ "bytes": 196115,
+ "sha256": "4aadac1d2cecff6a2e2b20e990fc0d7895cfa35e4788b4e408bb3f3ddd8bf2e8",
+ "fetched_at": "2026-10-04",
+ "fetched_by": "APIEvangelist-Harvest/1.0 (+https://apievangelist.com)",
+ "match": "byte-identical",
+ "note": "Re-fetched from the provider by verify-openapi-sources.py; the archived file is byte-identical to what the provider serves."
+}
