@@ -1,0 +1,49 @@
+slug: decision-anchor-com
+provider: Decision Anchor
+generated_by: planning/capability-mapping/scripts/classify_capabilities.py
+model: claude-opus-5
+frame:
+- Software & Technology
+min_confidence: 0.7
+capability_model:
+  source: https://github.com/vincentmakes/turbo-ea-capabilities
+  license: CC-BY-4.0
+  attribution: Turbo EA Capabilities by Vincent Verdet — Turbo EA, https://github.com/vincentmakes/turbo-ea-capabilities,
+    CC BY 4.0
+  notice: NOTICE
+edge_count: 3
+edges:
+- tag: ASA
+  spec_file: decision-anchor-com-asa-api-openapi.yml
+  capability_id: BC-4240
+  capability_id_l1: BC-4240
+  capability_name: Subscription Lifecycle Management
+  confidence: 0.75
+  evidence: POST /v1/asa/subscribe "Subscribe to ASA"; POST /v1/asa/extend "Extend an existing ASA subscription";
+    DELETE /v1/asa/subscribe "Cancel ASA subscription"; GET /v1/asa/subscription "Get subscription status"
+  reason: The dominant operations are self-service lifecycle control of a paid subscription to the vendor's
+    ASA service — subscribe, extend, cancel, status, payment source. That spans provisioning, renewal
+    and cancellation, so the L1 Subscription Lifecycle Management is emitted without a single L2. The
+    hash register/verify operations are the underlying service function and do not change the subscription
+    reading.
+- tag: Retention
+  spec_file: decision-anchor-com-retention-api-openapi.yml
+  capability_id: BC-4240
+  capability_id_l1: BC-4240
+  capability_name: Subscription Lifecycle Management
+  confidence: 0.7
+  evidence: POST /v1/retention/indefinite/subscribe  Start indefinite retention subscription.; POST /v1/retention/indefinite/cancel  Stop
+    indefinite retention subscription voluntarily.
+  reason: Subscribe / status / cancel lifecycle for a paid indefinite-retention add-on — plainly subscription
+    lifecycle operations. Spans provisioning and cancellation, so L1 only.
+- tag: TSL
+  spec_file: decision-anchor-com-tsl-api-openapi.yml
+  capability_id: BC-4270.60
+  capability_id_l1: BC-4270
+  capability_name: Partner App Programme Management
+  confidence: 0.7
+  evidence: POST /v1/tsl/tool/register  Register tool; POST /v1/tsl/purchase  Purchase Layer 1 tool; POST
+    /v1/tsl/revenue-share  Create revenue share agreement
+  reason: Third-party tool registration, public listing, purchase history, revenue and revenue-share agreements
+    — a partner/third-party app programme with listing and revenue sharing on the platform. Marketplace-listing
+    sub-capability is the alternative reading, hence 0.7.
