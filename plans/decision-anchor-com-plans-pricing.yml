@@ -70,3 +70,31 @@ price_list:
 notes:
 - 'The DAC/USD exchange rate is not published; the 201 response on a DD create carries "approx KRW (live estimate at current rate, not a settled claim)", implying a live rate.'
 - 'GET /dap/system/limits (owner session) exists and likely holds account-level caps; it is behind the portal login and was not probed.'
+x-canonical:
+  generated: '2026-10-08'
+  vocabulary: all/0-working/economics/plans-canonical.yml
+  models:
+  - metered
+  units: []
+  plans:
+  - name: Trial DAC
+    access: other
+    model: metered
+    model_how: derived
+    units: []
+    periods:
+    - other
+  - name: External DAC (pay per call in USDC via x402)
+    access: other
+    model: unstated
+    model_how: derived
+    units: []
+    periods:
+    - other
+  - name: Earned DAC (TSL marketplace revenue)
+    access: other
+    model: unstated
+    model_how: derived
+    units: []
+    periods:
+    - other
