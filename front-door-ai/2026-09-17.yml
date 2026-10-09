@@ -1,0 +1,31 @@
+# Front Door AI Index — decision-anchor-com — 2026-09-17
+# AI vocabulary counted on the provider's root page. Generated; do not edit.
+# `score` is null unless ownership is `own` — see front_door_ai.py.
+front_door_ai:
+  slug: decision-anchor-com
+  lexicon_version: '1.0'
+  probed_at: '2026-09-25'
+  host: decision-anchor.com
+  final_host: decision-anchor.com
+  ownership: own
+  owner: decision-anchor-com
+  shares_host_with: null
+  inherited_from: null
+  alias_of: null
+  verdict: scored
+  score: 7
+  band: 4
+  band_label: moderate
+  host_score: 7
+  density: 3.03
+  words: 2310
+  tiers:
+    agentic: 2
+    core: 5
+    model: 0
+  ambiguous: 26
+  top_terms:
+    agent: 26
+    AI: 5
+    MCP: 1
+    llms.txt: 1
