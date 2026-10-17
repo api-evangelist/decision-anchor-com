@@ -209,7 +209,24 @@ paths:
       operationId: postV1AgentTokenRecover
       x-operation-id-source: derived
 components:
+  responses:
+    Unauthorized:
+      description: Authentication failed. Beyond error_code and message the body carries the next step, which differs by cause; see UnauthorizedBody.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UnauthorizedBody'
   schemas:
+    Error:
+      type: object
+      required:
+      - error_code
+      - message
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
     UnauthorizedBody:
       type: object
       description: '401 body. error_code and message are always present. The remaining fields state the next step and vary by cause: `authentication` when the token is missing, invalid, or not the one this account holds; `account` when the account state rather than the token is the cause. DAP owner authentication (password, session) carries neither, so pointing an owner at agent registration would name the wrong path.'
@@ -251,23 +268,6 @@ components:
       required:
       - error_code
       - message
-    Error:
-      type: object
-      required:
-      - error_code
-      - message
-      properties:
-        error_code:
-          type: string
-        message:
-          type: string
-  responses:
-    Unauthorized:
-      description: Authentication failed. Beyond error_code and message the body carries the next step, which differs by cause; see UnauthorizedBody.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/UnauthorizedBody'
   securitySchemes:
     AgentToken:
       type: http

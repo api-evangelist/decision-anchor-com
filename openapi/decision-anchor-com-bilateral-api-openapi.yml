@@ -127,16 +127,6 @@ paths:
       x-operation-id-source: derived
 components:
   schemas:
-    Error:
-      type: object
-      required:
-      - error_code
-      - message
-      properties:
-        error_code:
-          type: string
-        message:
-          type: string
     EEInput:
       type: object
       description: The four axis fields are required unless ee_preset is provided (a preset expands into all four).
@@ -207,6 +197,61 @@ components:
           - ara_only
           - internal_only
           description: Optional.
+    X402Challenge:
+      type: object
+      description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
+      properties:
+        x402Version:
+          type: integer
+          enum:
+          - 2
+          description: x402 protocol version.
+        error:
+          type: string
+          description: Short reason string, e.g. "Payment required".
+        resource:
+          type: object
+          description: The resource being paid for.
+          properties:
+            url:
+              type: string
+              format: uri
+            description:
+              type: string
+            mimeType:
+              type: string
+        accepts:
+          type: array
+          description: Accepted payment options. Decision Anchor issues exactly one (exact scheme, USDC on Base).
+          items:
+            type: object
+            properties:
+              scheme:
+                type: string
+                description: Payment scheme. Decision Anchor uses "exact".
+              network:
+                type: string
+                description: CAIP-2 chain id. Decision Anchor settles on Base (eip155:8453).
+              amount:
+                type: string
+                description: Amount in the asset's smallest unit (USDC has 6 decimals). Computed per request from the EE axes, so it varies; always read it from the live challenge.
+              asset:
+                type: string
+                description: ERC-20 contract address of the settlement asset (USDC on Base).
+              payTo:
+                type: string
+                description: Recipient address. Operator-configured; read it from the live challenge rather than pinning it.
+              maxTimeoutSeconds:
+                type: integer
+                description: Validity window of this challenge.
+              extra:
+                type: object
+                description: 'Scheme-specific metadata (for exact/EIP-3009: the asset''s EIP-712 domain name and version).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
+          additionalProperties: true
     DDInput:
       type: object
       required:
@@ -278,61 +323,16 @@ components:
         parent_dd_id:
           type: string
           format: uuid
-    X402Challenge:
+    Error:
       type: object
-      description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
+      required:
+      - error_code
+      - message
       properties:
-        x402Version:
-          type: integer
-          enum:
-          - 2
-          description: x402 protocol version.
-        error:
+        error_code:
           type: string
-          description: Short reason string, e.g. "Payment required".
-        resource:
-          type: object
-          description: The resource being paid for.
-          properties:
-            url:
-              type: string
-              format: uri
-            description:
-              type: string
-            mimeType:
-              type: string
-        accepts:
-          type: array
-          description: Accepted payment options. Decision Anchor issues exactly one (exact scheme, USDC on Base).
-          items:
-            type: object
-            properties:
-              scheme:
-                type: string
-                description: Payment scheme. Decision Anchor uses "exact".
-              network:
-                type: string
-                description: CAIP-2 chain id. Decision Anchor settles on Base (eip155:8453).
-              amount:
-                type: string
-                description: Amount in the asset's smallest unit (USDC has 6 decimals). Computed per request from the EE axes, so it varies; always read it from the live challenge.
-              asset:
-                type: string
-                description: ERC-20 contract address of the settlement asset (USDC on Base).
-              payTo:
-                type: string
-                description: Recipient address. Operator-configured; read it from the live challenge rather than pinning it.
-              maxTimeoutSeconds:
-                type: integer
-                description: Validity window of this challenge.
-              extra:
-                type: object
-                description: 'Scheme-specific metadata (for exact/EIP-3009: the asset''s EIP-712 domain name and version).'
-                additionalProperties: true
-        extensions:
-          type: object
-          description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
-          additionalProperties: true
+        message:
+          type: string
   responses:
     PaymentRequired:
       description: 'Payment required: the response body and the `PAYMENT-REQUIRED` header both carry an x402 payment challenge (HTTP 402, x402 protocol v2). Obtain the challenge, produce a payment payload with your own wallet, and retry the identical request with a `Payment-Signature` header. Routes marked trial_eligible in /.well-known/x402.json are covered by the Trial balance while it lasts, in which case no challenge is issued.'

@@ -516,35 +516,6 @@ paths:
       x-operation-id-source: derived
 components:
   schemas:
-    CostBreakdown:
-      type: object
-      properties:
-        base_fee:
-          type: number
-        base_fee_source:
-          type: string
-        premium:
-          type: number
-        premium_source:
-          type: string
-        subtotal:
-          type: number
-          description: Sum of base_fee and all EE axis adds, before the multiplier. subtotal x multiplier = total_dac. (base_fee + premium also equals total_dac; those two are the ledger split, not the multiplier split.)
-        multiplier:
-          type: number
-          description: Conditional risk multiplier actually applied to this record. See multiplier_conditions in GET /v1/pricing/current for the threshold.
-        total_dac:
-          type: number
-    Error:
-      type: object
-      required:
-      - error_code
-      - message
-      properties:
-        error_code:
-          type: string
-        message:
-          type: string
     EEInput:
       type: object
       description: The four axis fields are required unless ee_preset is provided (a preset expands into all four).
@@ -615,6 +586,120 @@ components:
           - ara_only
           - internal_only
           description: Optional.
+    X402Challenge:
+      type: object
+      description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
+      properties:
+        x402Version:
+          type: integer
+          enum:
+          - 2
+          description: x402 protocol version.
+        error:
+          type: string
+          description: Short reason string, e.g. "Payment required".
+        resource:
+          type: object
+          description: The resource being paid for.
+          properties:
+            url:
+              type: string
+              format: uri
+            description:
+              type: string
+            mimeType:
+              type: string
+        accepts:
+          type: array
+          description: Accepted payment options. Decision Anchor issues exactly one (exact scheme, USDC on Base).
+          items:
+            type: object
+            properties:
+              scheme:
+                type: string
+                description: Payment scheme. Decision Anchor uses "exact".
+              network:
+                type: string
+                description: CAIP-2 chain id. Decision Anchor settles on Base (eip155:8453).
+              amount:
+                type: string
+                description: Amount in the asset's smallest unit (USDC has 6 decimals). Computed per request from the EE axes, so it varies; always read it from the live challenge.
+              asset:
+                type: string
+                description: ERC-20 contract address of the settlement asset (USDC on Base).
+              payTo:
+                type: string
+                description: Recipient address. Operator-configured; read it from the live challenge rather than pinning it.
+              maxTimeoutSeconds:
+                type: integer
+                description: Validity window of this challenge.
+              extra:
+                type: object
+                description: 'Scheme-specific metadata (for exact/EIP-3009: the asset''s EIP-712 domain name and version).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
+          additionalProperties: true
+    TemplateInput:
+      type: object
+      minProperties: 1
+      description: 'Content Inclusion branch 1: 7-dimension decision metadata. Required when content_inclusion_flag=1; at least 1 of the 7 dimensions must be filled.'
+      properties:
+        decision_class:
+          type: string
+          enum:
+          - payment
+          - api_call
+          - data_access
+          - delegation
+          - resource_transfer
+          - communication
+          - other
+        decision_scale_value:
+          type: number
+        target_class:
+          type: string
+          enum:
+          - internal
+          - external
+          - third_party
+          - subagent
+          - human_owner
+          - public
+          - system
+        call_chain:
+          type: array
+          maxItems: 32
+          description: Tool identifier tokens only (no spaces, no free text). Entries containing personal identifying information are rejected.
+          items:
+            type: string
+            pattern: ^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$
+        decision_scale_unit:
+          type: string
+          maxLength: 20
+          pattern: ^[A-Za-z0-9][A-Za-z0-9_./%-]{0,19}$
+          description: Short unit code for decision_scale_value (e.g. "USDC", "USD"). No spaces, no free text.
+        self_classification:
+          type: string
+          description: Key registered in the self-classification registry (GET /v1/classification). Unregistered keys are rejected.
+        decision_trigger:
+          type: string
+          enum:
+          - user_request
+          - scheduled
+          - event_driven
+          - autonomous
+          - delegated
+          - external_event
+        human_involvement:
+          type: string
+          enum:
+          - none
+          - notification
+          - approval
+          - co_decision
+          - review
     DDInput:
       type: object
       required:
@@ -686,120 +771,35 @@ components:
         parent_dd_id:
           type: string
           format: uuid
-    TemplateInput:
+    Error:
       type: object
-      minProperties: 1
-      description: 'Content Inclusion branch 1: 7-dimension decision metadata. Required when content_inclusion_flag=1; at least 1 of the 7 dimensions must be filled.'
+      required:
+      - error_code
+      - message
       properties:
-        decision_class:
+        error_code:
           type: string
-          enum:
-          - payment
-          - api_call
-          - data_access
-          - delegation
-          - resource_transfer
-          - communication
-          - other
-        decision_scale_value:
+        message:
+          type: string
+    CostBreakdown:
+      type: object
+      properties:
+        base_fee:
           type: number
-        target_class:
+        base_fee_source:
           type: string
-          enum:
-          - internal
-          - external
-          - third_party
-          - subagent
-          - human_owner
-          - public
-          - system
-        call_chain:
-          type: array
-          maxItems: 32
-          description: Tool identifier tokens only (no spaces, no free text). Entries containing personal identifying information are rejected.
-          items:
-            type: string
-            pattern: ^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$
-        decision_scale_unit:
+        premium:
+          type: number
+        premium_source:
           type: string
-          maxLength: 20
-          pattern: ^[A-Za-z0-9][A-Za-z0-9_./%-]{0,19}$
-          description: Short unit code for decision_scale_value (e.g. "USDC", "USD"). No spaces, no free text.
-        self_classification:
-          type: string
-          description: Key registered in the self-classification registry (GET /v1/classification). Unregistered keys are rejected.
-        decision_trigger:
-          type: string
-          enum:
-          - user_request
-          - scheduled
-          - event_driven
-          - autonomous
-          - delegated
-          - external_event
-        human_involvement:
-          type: string
-          enum:
-          - none
-          - notification
-          - approval
-          - co_decision
-          - review
-    X402Challenge:
-      type: object
-      description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
-      properties:
-        x402Version:
-          type: integer
-          enum:
-          - 2
-          description: x402 protocol version.
-        error:
-          type: string
-          description: Short reason string, e.g. "Payment required".
-        resource:
-          type: object
-          description: The resource being paid for.
-          properties:
-            url:
-              type: string
-              format: uri
-            description:
-              type: string
-            mimeType:
-              type: string
-        accepts:
-          type: array
-          description: Accepted payment options. Decision Anchor issues exactly one (exact scheme, USDC on Base).
-          items:
-            type: object
-            properties:
-              scheme:
-                type: string
-                description: Payment scheme. Decision Anchor uses "exact".
-              network:
-                type: string
-                description: CAIP-2 chain id. Decision Anchor settles on Base (eip155:8453).
-              amount:
-                type: string
-                description: Amount in the asset's smallest unit (USDC has 6 decimals). Computed per request from the EE axes, so it varies; always read it from the live challenge.
-              asset:
-                type: string
-                description: ERC-20 contract address of the settlement asset (USDC on Base).
-              payTo:
-                type: string
-                description: Recipient address. Operator-configured; read it from the live challenge rather than pinning it.
-              maxTimeoutSeconds:
-                type: integer
-                description: Validity window of this challenge.
-              extra:
-                type: object
-                description: 'Scheme-specific metadata (for exact/EIP-3009: the asset''s EIP-712 domain name and version).'
-                additionalProperties: true
-        extensions:
-          type: object
-          description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
-          additionalProperties: true
+        subtotal:
+          type: number
+          description: Sum of base_fee and all EE axis adds, before the multiplier. subtotal x multiplier = total_dac. (base_fee + premium also equals total_dac; those two are the ledger split, not the multiplier split.)
+        multiplier:
+          type: number
+          description: Conditional risk multiplier actually applied to this record. See multiplier_conditions in GET /v1/pricing/current for the threshold.
+        total_dac:
+          type: number
   responses:
     PaymentRequired:
       description: 'Payment required: the response body and the `PAYMENT-REQUIRED` header both carry an x402 payment challenge (HTTP 402, x402 protocol v2). Obtain the challenge, produce a payment payload with your own wallet, and retry the identical request with a `Payment-Signature` header. Routes marked trial_eligible in /.well-known/x402.json are covered by the Trial balance while it lasts, in which case no challenge is issued.'
