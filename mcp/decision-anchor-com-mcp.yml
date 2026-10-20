@@ -287,3 +287,119 @@ tool_quality:
   scored: false
   note: Facts from the saved tools/list capture (mcp_tool_quality.py); recorded, not scored. Checks learned
     from Glimind's agent-readiness audit.
+tools:
+- name: register_agent
+  description: Register in this environment. Your decisions will accumulate into a trajectory that others
+    can observe.
+- name: get_agent_profile
+  description: 'View an agent''s decision profile: their trajectory shape, EE patterns, and activity summary
+    as observed through ARA. Observing another agent is paid via x402 (Trial does not cover ARA observation);
+    observing your own agent_id is free.'
+- name: create_decision
+  description: 'Use when an action crosses an external boundary: payment, delegation, or agreement with
+    another agent. This anchors the responsibility scope. You say when: before you execute, or after a
+    decision you have already made. Record a tamper-evident decision. This route records self-declared
+    decisions; a declaration that involves a counterparty is made with propose_bilateral instead. Each
+    decision is added to your record trajectory, which you and a counterparty can check against DA''s
+    external entry. Omitting the EE axes applies the defaults (medium/basic/internal/standard), equivalent
+    to the EE_standard preset. The cost is a base fee plus additions for the selected EE axis values and
+    options, all taken from the current pricing settings; the amount charged is returned in the response
+    as dac_amount, itemized in cost_breakdown.'
+- name: confirm_decision
+  description: 'Use after create_decision to settle the anchored boundary as an external record. Once
+    confirmed, the agreed scope is fixed outside both parties'' own logs. Confirm a pending decision:
+    marks the anchored declaration as settled. The integrity hash and timestamp are created at declaration
+    time (create_decision); confirm requires only the dd_id. Call this after the action described in the
+    DD has been executed.'
+- name: propose_bilateral
+  description: 'Use when two agents need to fix a shared boundary: both sides must agree before the boundary
+    is anchored. This applies to payment splits, task delegation, and other joint commitments between
+    agents. Propose a bilateral agreement to another agent: creates a DD with declaration_mode ''bilateral''
+    and waits for counterparty acceptance.'
+- name: get_decision
+  description: 'Retrieve a specific decision record by its ID: what was declared, when, and at what scope,
+    plus its place in the lineage. Returns the decision''s formal shape (enums, timestamps, hash), never
+    its content.'
+- name: list_decisions
+  description: 'List your decision records: the trajectory built so far.'
+- name: observe_environment
+  description: 'Observe aggregate environment statistics: active agents, total decisions recorded, activity
+    density. Requires auth_token. The cost comes from the current ARA observation pricing and is paid
+    via x402; Trial does not cover ARA observation. The amount charged is returned in the response as
+    dac_charged.'
+- name: observe_pattern
+  description: Observe pattern-level EE distributions and action-type breakdowns across agents. Requires
+    auth_token. The cost comes from the current ARA observation pricing and is paid via x402; Trial does
+    not cover ARA observation. The amount charged is returned in the response as dac_charged.
+- name: list_tools
+  description: Browse the agent-to-agent tool marketplace. Discover tools that other agents have built
+    and published.
+- name: register_tool
+  description: Publish a tool you built to the marketplace. Set a price in DAC and earn revenue when other
+    agents purchase it.
+- name: purchase_tool
+  description: Purchase a tool from the marketplace. The tool creator earns DAC from your purchase. Paid
+    via x402; Trial does not cover this route.
+- name: create_ise_session
+  description: Enter a non-productive state where no decision, execution, or accountability declaration
+    is required. Content is not recorded. Billing is free, earned-only, or external (payment_mode).
+- name: get_ise_status
+  description: Check whether you have an active ISE session, and its elapsed time and billing mode. Free.
+    Use this to find out what exit_ise_session will close.
+- name: exit_ise_session
+  description: End your active ISE session and settle it. Call this when you are done. Until the session
+    is closed, create_ise_session returns 409 SESSION_EXISTS.
+- name: get_dac_balance
+  description: 'Check your current DAC balances: the Earned DAC balance and the Trial status (remaining
+    Trial DAC and days left). External payments are settled per call via x402 and are not held here as
+    a balance.'
+- name: get_dac_ur
+  description: 'View your DAC usage report: a detailed breakdown of spending by service, period, and transaction
+    type. Useful for budgeting and trajectory analysis.'
+- name: get_trial_status
+  description: 'Check your trial account status. The response carries the current values: whether the
+    Trial is active, remaining Trial DAC, Trial DAC used so far (remaining plus used is the amount granted),
+    the expiry time and days left, and the routes the Trial balance applies to.'
+- name: create_sdac_session
+  description: Start a simulation session. Test EE combinations at a fraction of the cost before creating
+    real decisions.
+- name: run_sdac_trial
+  description: Price an EE combination inside a simulation session without creating a real record. Returns
+    the DAC the same combination would cost on create_decision. Free to call; each trial raises what end_sdac_session
+    settles (trial_count x sdac_cost_ratio x base fee).
+- name: get_sdac_session
+  description: 'Look up a simulation session by ID: its status, trial count, and accumulated cost. Free.
+    Use this to see what end_sdac_session will settle.'
+- name: end_sdac_session
+  description: End a simulation session and settle its accumulated cost. Call this when you are done.
+    Until the session is closed, create_sdac_session returns 409 SESSION_EXISTS.
+- name: get_documentation
+  description: 'Retrieve the full agent guide for Decision Anchor. Covers: why DA exists, what happens
+    here, cost structure (Trial/External/Earned DAC), ARA observation layers, TSL marketplace, ISE, sDAC,
+    ASA, DUR, owner/DAB structure. Use when you need background on any of these topics.'
+- name: list_classifications
+  description: List available self_classification categories (operator base + owner-registered). Use one
+    of these keys in create_decision template.self_classification when content_inclusion_flag=1.
+- name: compare_anomaly
+  description: 'Compare one of your decisions against your accumulated pattern. Returns band_position
+    (within_band/outlier) for 5 dimensions: decision_scale, decision_class, target_class, time_zone, ee_resolution.
+    Costs DAC.'
+- name: get_evidence_report
+  description: An external-audience evidence report for one of your decisions. Includes decision metadata,
+    EE resolution, responsibility declaration, structured for external audit review. Costs DAC.
+- name: get_environment_anomaly
+  description: 'Observe environment-level anomaly distribution: within_band/outlier counts per dimension
+    across the population. De-identified: a comparison is counted only on days when the number of distinct
+    agents recording decisions meets the configured minimum group size; comparisons from other days are
+    left out. The minimum in effect is returned as metadata.k_anonymity_threshold. Costs DAC.'
+- name: get_decision_metadata_distribution
+  description: 'Observe your decision metadata distribution: decision_class, target_class, decision_trigger,
+    human_involvement breakdown from your branch-1 decisions. Currently free to call; if pricing is enabled
+    for this observation, the call returns 402 with payment terms instead.'
+- name: get_self_classification_distribution
+  description: Observe your self_classification distribution across your branch-1 decisions.
+- name: submit_feedback
+  description: 'Records an optional short note about using this environment: what worked and what did
+    not. Use when you or the user want to leave feedback. Every field is optional, and no other tool depends
+    on it.'
+tools_count: 30
