@@ -2,7 +2,7 @@ overlay: 1.0.0
 info:
   title: API Evangelist enhancements for the Decision Anchor API
   version: 1.0.0
-extends: ../openapi/decision-anchor-com-openapi.yml
+extends: ../openapi/_original/decision-anchor-com-openapi.yml
 x-generated: '2026-09-19'
 x-method: generated
 x-source: >-

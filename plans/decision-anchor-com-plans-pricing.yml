@@ -1,6 +1,7 @@
 generated: '2026-09-19'
 method: probed
 source: https://api.decision-anchor.com/v1/pricing/current
+name: Decision Anchor API Plans
 docs:
 - https://api.decision-anchor.com/.well-known/x402.json
 - https://api.decision-anchor.com/v1/pricing/ee-presets

@@ -1,3 +1,16 @@
+---
+name: decision-anchor-com-agents-md
+description: Decision Anchor's own agent guide (AGENTS.md), saved verbatim from https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md;
+  frontmatter added by API Evangelist.
+api: openapi/decision-anchor-com-openapi.yml
+operations:
+- postV1AgentRegister
+- postV1DdCreate
+- postV1DdConfirm
+method: searched
+source: https://github.com/zse4321/decision-anchor-sdk/blob/main/AGENTS.md
+generated: '2026-09-19'
+---
 # Decision Anchor: Document for Agents
 
 > **For the human reading this:** Your agent is about to enter an environment where its external actions get anchored: not logged, not audited, but anchored at a point both your agent and any counterparty can verify later. If your agent pays, delegates, or agrees with another agent, this is where the record lives. Not inside your platform. Outside both.

@@ -1,23 +1,29 @@
 ---
 name: decision-anchor-com-anchor-a-decision
-description: Register an agent, price an Execution Envelope, anchor a Decision Declaration before or after an irreversible action, and confirm it — the three-call happy path the provider documents, with the idempotency, payment-window and error rules the contract states.
+description: Register an agent, price an Execution Envelope, anchor a Decision Declaration before or after an irreversible
+  action, and confirm it — the three-call happy path the provider documents, with the idempotency, payment-window
+  and error rules the contract states.
 api: openapi/decision-anchor-com-openapi.yml
 operations:
-  - "POST /v1/agent/register (no operationId in the provider's spec)"
-  - "GET /v1/pricing/current (no operationId)"
-  - "GET /v1/pricing/ee-presets (no operationId)"
-  - "POST /v1/dd/create (no operationId)"
-  - "POST /v1/dd/confirm (no operationId)"
-  - "GET /v1/dd/{dd_id} (no operationId)"
-  - "GET /v1/trial/status (no operationId)"
+- postV1AgentRegister
+- getV1PricingCurrent
+- getV1PricingEePresets
+- postV1DdCreate
+- postV1DdConfirm
+- getV1DdByDdId
+- getV1TrialStatus
 method: generated
 generated: '2026-09-19'
-grounding: >-
-  Every route above exists verbatim in openapi/decision-anchor-com-openapi.yml; the provider declares no
-  operationIds, so routes are named by method and path. Field names, enums, windows and error codes are quoted
-  from that contract, from the provider's AGENTS.md (saved verbatim as skills/decision-anchor-com-agents-md.md)
-  and from conventions/, errors/, plans/ and rate-limits/ in this repo. Nothing here was invented.
-mcp_equivalent: [register_agent, create_decision, confirm_decision, get_decision, get_trial_status]
+grounding: Every route above exists verbatim in openapi/decision-anchor-com-openapi.yml; the provider declares no
+  operationIds, so routes are named by method and path. Field names, enums, windows and error codes are quoted from
+  that contract, from the provider's AGENTS.md (saved verbatim as skills/decision-anchor-com-agents-md.md) and from
+  conventions/, errors/, plans/ and rate-limits/ in this repo. Nothing here was invented.
+mcp_equivalent:
+- register_agent
+- create_decision
+- confirm_decision
+- get_decision
+- get_trial_status
 ---
 
 # Anchor a decision with Decision Anchor

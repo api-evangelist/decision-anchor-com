@@ -1,0 +1,185 @@
+generated: '2026-10-20'
+method: derived
+generator: derive-vocabulary.py
+source:
+- openapi/decision-anchor-com-agent-api-openapi.yml
+- openapi/decision-anchor-com-ara-api-openapi.yml
+- openapi/decision-anchor-com-asa-api-openapi.yml
+- openapi/decision-anchor-com-bilateral-api-openapi.yml
+- openapi/decision-anchor-com-classification-api-openapi.yml
+vocabulary:
+  name: Decision Anchor Domain Vocabulary
+  description: 'Terms declared by Decision Anchor''s own API contract: its resource groups, objects and enumerations, with the contract''s definitions.
+    Derived, not authored.'
+  version: '2026-10-20'
+  terms:
+  - term: Agent
+    definition: 'Agent: registration, authentication, and disclosure management'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-agent-api-openapi.yml
+  - term: ARA
+    definition: 'Agent Record Access: decision history observation and structural distributions'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-ara-api-openapi.yml
+  - term: ASA
+    definition: 'Agent State Archive: agent continuity and state backup verification'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-asa-api-openapi.yml
+  - term: Bilateral
+    definition: 'Bilateral DD: multi-party agreement records'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-bilateral-api-openapi.yml
+  - term: Classification
+    definition: 'self_classification registry: operator base categories and owner-registered categories'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-classification-api-openapi.yml
+  - term: DAB
+    definition: 'Decision Anchor Budget: per-period external DAC spending limit set by the owner (settable above or below the default)'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-dab-api-openapi.yml
+  - term: DAP Agent
+    definition: DAP agent linking and management
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-dap-agent-api-openapi.yml
+  - term: DAP ASA
+    definition: DAP owner ASA query
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-dap-asa-api-openapi.yml
+  - term: DAP Auth
+    definition: DAP owner authentication (session-based)
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-dap-auth-api-openapi.yml
+  - term: DAP DAB
+    definition: DAP DAB configuration and query
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-dap-dab-api-openapi.yml
+  - term: DAP Dashboard
+    definition: DAP dashboard and reports
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-dap-dashboard-api-openapi.yml
+  - term: DAP DUR
+    definition: DAP owner DUR query
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-dap-dur-api-openapi.yml
+  - term: DAP Policy
+    definition: 'DAP owner policy: Content Inclusion branch enforcement over linked agents'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-dap-policy-api-openapi.yml
+  - term: DAP Trial
+    definition: DAP owner Trial status
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-dap-trial-api-openapi.yml
+  - term: DAP TSL
+    definition: DAP human share agreements
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-dap-tsl-api-openapi.yml
+  - term: DD
+    definition: 'Decision Declaration: external decision record with accountability scope'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-dd-api-openapi.yml
+  - term: DUR
+    definition: 'DAC Usage Report: agent cost tracking and export'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-dur-api-openapi.yml
+  - term: Earned DAC
+    definition: 'Earned DAC: revenue balance and ledger from tool sales'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-earned-dac-api-openapi.yml
+  - term: ISE
+    definition: 'Idle State Environment: non-productive agent state'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-ise-api-openapi.yml
+  - term: Payment
+    definition: 'Payment: transaction status via x402/USDC'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-payment-api-openapi.yml
+  - term: Pricing
+    definition: 'Pricing: current fee structure (no auth required)'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-pricing-api-openapi.yml
+  - term: sDAC
+    definition: 'Simulated DAC: cost simulation with identical physics'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-sdac-api-openapi.yml
+  - term: Trial
+    definition: 'Trial DAC: free trial status (500 DAC / 30 days)'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-trial-api-openapi.yml
+  - term: TSL
+    definition: 'Trace Synthesis Layer: agent-built interpretation tools over ARA observation data'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-tsl-api-openapi.yml
+  - term: Error
+    definition: 'Object declared by the contract with fields: error_code, message.'
+    tags:
+    - Object
+    source: openapi/decision-anchor-com-agent-api-openapi.yml#/components/schemas/Error
+  - term: UnauthorizedBody
+    definition: '401 body. error_code and message are always present. The remaining fields state the next step and vary by cause: `authentication`
+      when the token is missing, invalid, or not the one this account holds; `account` when the account state rather than the token is the cause.
+      DAP owner authentication (password, session) carries neither, so pointing an owner at agent registration would name the wrong path'
+    tags:
+    - Object
+    source: openapi/decision-anchor-com-agent-api-openapi.yml#/components/schemas/UnauthorizedBody
+  - term: X402Challenge
+    definition: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally
+      not fixed here; read them from the live 402 response.
+    tags:
+    - Object
+    source: openapi/decision-anchor-com-ara-api-openapi.yml#/components/schemas/X402Challenge
+  - term: EEInput
+    definition: The four axis fields are required unless ee_preset is provided (a preset expands into all four).
+    tags:
+    - Object
+    source: openapi/decision-anchor-com-bilateral-api-openapi.yml#/components/schemas/EEInput
+  - term: DDInput
+    definition: 'Object declared by the contract with fields: dd_unit_type, dd_declaration_mode, decision_type, decision_action_type, origin_context_type,
+      selection_state, selection_scope, decision_at, parent_dd_id.'
+    tags:
+    - Object
+    source: openapi/decision-anchor-com-bilateral-api-openapi.yml#/components/schemas/DDInput
+  - term: TemplateInput
+    definition: 'Content Inclusion branch 1: 7-dimension decision metadata. Required when content_inclusion_flag=1; at least 1 of the 7 dimensions
+      must be filled.'
+    tags:
+    - Object
+    source: openapi/decision-anchor-com-dd-api-openapi.yml#/components/schemas/TemplateInput
+  - term: CostBreakdown
+    definition: 'Object declared by the contract with fields: base_fee, base_fee_source, premium, premium_source, subtotal, multiplier, total_dac.'
+    tags:
+    - Object
+    source: openapi/decision-anchor-com-dd-api-openapi.yml#/components/schemas/CostBreakdown
+  - term: DAP Account
+    definition: 'Resource group in the contract; its operation GET /dap/account/me: Get own account profile'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-dap-account-api-openapi.yml
+  - term: Retention
+    definition: 'Resource group in the contract; its operation POST /v1/retention/indefinite/subscribe: Start indefinite retention subscription.'
+    tags:
+    - Resource Group
+    source: openapi/decision-anchor-com-retention-api-openapi.yml

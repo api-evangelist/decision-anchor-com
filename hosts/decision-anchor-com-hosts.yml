@@ -1,0 +1,139 @@
+generated: '2026-10-20'
+method: derived
+source: the pre-flight dossier, apis.yml pointers, spec servers, well-known, vendors -- nothing fetched here
+generator: derive-hosts.py
+summary:
+  hosts: 9
+  own: 6
+  other_domain: 2
+  platform: 1
+  roles:
+  - api
+  - docs
+  - other
+  - website
+hosts:
+- host: a2a.decision-anchor.com
+  found_by:
+  - apis[]
+  - probed
+  - contract-discovery
+  - well-known
+  types: []
+  serves:
+  - api
+  registrable_domain: decision-anchor.com
+  role: other
+  relation: own
+- host: api.decision-anchor.com
+  found_by:
+  - pointer
+  - apis[]
+  - probed
+  - site-links
+  - docs-index
+  - spec-found
+  - contract-discovery
+  - well-known
+  types:
+  - APIReference
+  - Pricing
+  - LLMsTxt
+  - DataSubjectRequest
+  serves:
+  - api
+  - docs
+  - spec
+  registrable_domain: decision-anchor.com
+  role: docs
+  relation: own
+- host: api.modelcontextprotocol.io
+  found_by:
+  - contract-discovery
+  types: []
+  serves: []
+  registrable_domain: modelcontextprotocol.io
+  role: api
+  relation: other-domain
+- host: business.decision-anchor.com
+  found_by:
+  - probed
+  - site-links
+  - well-known
+  types: []
+  serves: []
+  registrable_domain: decision-anchor.com
+  role: other
+  relation: own
+- host: decision-anchor.com
+  found_by:
+  - pointer
+  - probed
+  - docs-index
+  - well-known
+  - vendor-detect
+  types:
+  - Website
+  - Blog
+  - ChangeLog
+  serves:
+  - docs
+  - cdn
+  vendor: cloudflare
+  registrable_domain: decision-anchor.com
+  role: website
+  relation: own
+- host: github.com
+  found_by:
+  - pointer
+  - apis[]
+  - docs-index
+  - vendor-detect
+  types:
+  - Documentation
+  - GettingStarted
+  - SDK
+  - GitHubRepository
+  serves:
+  - docs
+  - hosting
+  vendor: github-pages
+  registrable_domain: github.com
+  role: docs
+  relation: platform
+- host: mcp.decision-anchor.com
+  found_by:
+  - apis[]
+  - probed
+  - docs-index
+  - contract-discovery
+  - well-known
+  types: []
+  serves:
+  - api
+  - docs
+  registrable_domain: decision-anchor.com
+  role: other
+  relation: own
+- host: registry.modelcontextprotocol.io
+  found_by:
+  - probed
+  - docs-index
+  - contract-discovery
+  - well-known
+  types: []
+  serves:
+  - docs
+  registrable_domain: modelcontextprotocol.io
+  role: other
+  relation: other-domain
+- host: solo.decision-anchor.com
+  found_by:
+  - probed
+  - site-links
+  - well-known
+  types: []
+  serves: []
+  registrable_domain: decision-anchor.com
+  role: other
+  relation: own

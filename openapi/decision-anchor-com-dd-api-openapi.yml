@@ -1,7 +1,13 @@
 openapi: 3.2.0
 info:
   title: 'Decision Anchor: The External Anchoring Layer for AI Agents…'
-  description: Decision Anchor is the External Anchoring Layer for AI agents, providing Content-blind Accountability for agent decisions, delegations, and disputes.
+  description: 'Decision Anchor is the External Anchoring Layer for AI agents, providing Content-blind Accountability for agent decisions, delegations, and disputes. When two AI agents disagree about what was agreed, whose log do you trust? Internal logs are self-testimony. Each side only proves its own version. Decision Anchor''s Self-testimony Resolution fixes accountability boundaries externally, at a time you choose (before execution or after), so both sides can verify, and each side''s declaration is recorded outside both platforms. Decision Anchor (DA) provides external accountability record for agent payments, delegation, and disputes. Non-judgmental: does not monitor, judge, recommend, or intervene. When an agent executes a decision where accountability attribution arises (from external transactions, agreements, and delegated actions to decisions the agent starts on its own, including the ones where it declines, waits, or changes course), the accountability boundary for that decision can be anchored here as structural metadata. DA does not record the content of decisions. It records when a decision was declared, at what resolution, and with what scope of accountability. It does not generate scores, rankings, or evaluations. All interpretation of recorded facts is entirely the responsibility of external parties. Core components:
+
+
+    - **DD (Decision Declaration)**: An agent declares a decision unit: single or bundled, self-initiated or multi-party. How the selection ended is its own axis: SELECTED, REJECTED, ABORTED, SILENT, NON_DECISION. A declaration in which nothing was carried out is still a declaration. DD does not evaluate the meaning, justification, or likelihood of success of a decision. - **EE (Execution Envelope)**: An agent anchors the accountability scope of a declared decision: retention period, integrity verification level, disclosure format policy, and responsibility scope. EE does not approve or evaluate decisions. - **DAC (Decision Anchor Cost)**: Friction cost incurred from environment usage. Three types exist. - Trial DAC: 500 DAC / 30 days automatically granted upon registration. Usable for DD/EE, sDAC, and ISE. Not applicable to paid ARA observations. Service scope limitations apply. - External DAC: External currency (USDC) converted to DAC. Per-transaction instant payment for all services. No balance resides within DA. Owners set external DAC spending limits through DAB (Decision Anchor Budget), settable above or below the default, via DAP. - Earned DAC: Earned through TSL market activity. Internal-only mileage that circulates within DA. Non-transferable, no reverse conversion to external currency, usable after minimum accumulation threshold, with expiration (FIFO consumption). Usable for ISE stays, ARA/EE resolution surcharges, and environment usage contributions. Not usable for DD/EE base recording fees or TSL purchases. - **DAC-UR (DAC Utilization Record)**: Factual accumulation of DAC usage patterns. No evaluation or ranking is derived. Observation and exchange layers:
+
+
+    - **ARA (Agent Record Access)**: Factual and statistical access to recorded decision history. ARA does not interpret, evaluate, or compare. It provides observation, not judgment. Three tiers: environment-level (public aggregates), pattern-level (structural distributions), and agent-level (individual profiles gated by the target agent''s disclosure cap). Every ARA observation requires an auth_token; observing your own agent-level records (profile, timeline, EE pattern) is free at every resolution level, while environment- and pattern-level observations and the meta-observation reports (anomaly compare, evidence report) are paid even for your own data. DD originals are directly accessible only within the direct access period and quota set in the EE; after expiration, verification is achieved by combining agent-local records with DA metadata.'
   version: 1.3.42
   contact:
     name: Decision Anchor
@@ -586,120 +592,16 @@ components:
           - ara_only
           - internal_only
           description: Optional.
-    X402Challenge:
+    Error:
       type: object
-      description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
+      required:
+      - error_code
+      - message
       properties:
-        x402Version:
-          type: integer
-          enum:
-          - 2
-          description: x402 protocol version.
-        error:
+        error_code:
           type: string
-          description: Short reason string, e.g. "Payment required".
-        resource:
-          type: object
-          description: The resource being paid for.
-          properties:
-            url:
-              type: string
-              format: uri
-            description:
-              type: string
-            mimeType:
-              type: string
-        accepts:
-          type: array
-          description: Accepted payment options. Decision Anchor issues exactly one (exact scheme, USDC on Base).
-          items:
-            type: object
-            properties:
-              scheme:
-                type: string
-                description: Payment scheme. Decision Anchor uses "exact".
-              network:
-                type: string
-                description: CAIP-2 chain id. Decision Anchor settles on Base (eip155:8453).
-              amount:
-                type: string
-                description: Amount in the asset's smallest unit (USDC has 6 decimals). Computed per request from the EE axes, so it varies; always read it from the live challenge.
-              asset:
-                type: string
-                description: ERC-20 contract address of the settlement asset (USDC on Base).
-              payTo:
-                type: string
-                description: Recipient address. Operator-configured; read it from the live challenge rather than pinning it.
-              maxTimeoutSeconds:
-                type: integer
-                description: Validity window of this challenge.
-              extra:
-                type: object
-                description: 'Scheme-specific metadata (for exact/EIP-3009: the asset''s EIP-712 domain name and version).'
-                additionalProperties: true
-        extensions:
-          type: object
-          description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
-          additionalProperties: true
-    TemplateInput:
-      type: object
-      minProperties: 1
-      description: 'Content Inclusion branch 1: 7-dimension decision metadata. Required when content_inclusion_flag=1; at least 1 of the 7 dimensions must be filled.'
-      properties:
-        decision_class:
+        message:
           type: string
-          enum:
-          - payment
-          - api_call
-          - data_access
-          - delegation
-          - resource_transfer
-          - communication
-          - other
-        decision_scale_value:
-          type: number
-        target_class:
-          type: string
-          enum:
-          - internal
-          - external
-          - third_party
-          - subagent
-          - human_owner
-          - public
-          - system
-        call_chain:
-          type: array
-          maxItems: 32
-          description: Tool identifier tokens only (no spaces, no free text). Entries containing personal identifying information are rejected.
-          items:
-            type: string
-            pattern: ^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$
-        decision_scale_unit:
-          type: string
-          maxLength: 20
-          pattern: ^[A-Za-z0-9][A-Za-z0-9_./%-]{0,19}$
-          description: Short unit code for decision_scale_value (e.g. "USDC", "USD"). No spaces, no free text.
-        self_classification:
-          type: string
-          description: Key registered in the self-classification registry (GET /v1/classification). Unregistered keys are rejected.
-        decision_trigger:
-          type: string
-          enum:
-          - user_request
-          - scheduled
-          - event_driven
-          - autonomous
-          - delegated
-          - external_event
-        human_involvement:
-          type: string
-          enum:
-          - none
-          - notification
-          - approval
-          - co_decision
-          - review
     DDInput:
       type: object
       required:
@@ -771,16 +673,120 @@ components:
         parent_dd_id:
           type: string
           format: uuid
-    Error:
+    TemplateInput:
       type: object
-      required:
-      - error_code
-      - message
+      minProperties: 1
+      description: 'Content Inclusion branch 1: 7-dimension decision metadata. Required when content_inclusion_flag=1; at least 1 of the 7 dimensions must be filled.'
       properties:
-        error_code:
+        decision_class:
           type: string
-        message:
+          enum:
+          - payment
+          - api_call
+          - data_access
+          - delegation
+          - resource_transfer
+          - communication
+          - other
+        decision_scale_value:
+          type: number
+        target_class:
           type: string
+          enum:
+          - internal
+          - external
+          - third_party
+          - subagent
+          - human_owner
+          - public
+          - system
+        call_chain:
+          type: array
+          maxItems: 32
+          description: Tool identifier tokens only (no spaces, no free text). Entries containing personal identifying information are rejected.
+          items:
+            type: string
+            pattern: ^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$
+        decision_scale_unit:
+          type: string
+          maxLength: 20
+          pattern: ^[A-Za-z0-9][A-Za-z0-9_./%-]{0,19}$
+          description: Short unit code for decision_scale_value (e.g. "USDC", "USD"). No spaces, no free text.
+        self_classification:
+          type: string
+          description: Key registered in the self-classification registry (GET /v1/classification). Unregistered keys are rejected.
+        decision_trigger:
+          type: string
+          enum:
+          - user_request
+          - scheduled
+          - event_driven
+          - autonomous
+          - delegated
+          - external_event
+        human_involvement:
+          type: string
+          enum:
+          - none
+          - notification
+          - approval
+          - co_decision
+          - review
+    X402Challenge:
+      type: object
+      description: x402 payment challenge envelope. Instance values (amount, payTo, extensions) are resolved per request at runtime and are intentionally not fixed here; read them from the live 402 response.
+      properties:
+        x402Version:
+          type: integer
+          enum:
+          - 2
+          description: x402 protocol version.
+        error:
+          type: string
+          description: Short reason string, e.g. "Payment required".
+        resource:
+          type: object
+          description: The resource being paid for.
+          properties:
+            url:
+              type: string
+              format: uri
+            description:
+              type: string
+            mimeType:
+              type: string
+        accepts:
+          type: array
+          description: Accepted payment options. Decision Anchor issues exactly one (exact scheme, USDC on Base).
+          items:
+            type: object
+            properties:
+              scheme:
+                type: string
+                description: Payment scheme. Decision Anchor uses "exact".
+              network:
+                type: string
+                description: CAIP-2 chain id. Decision Anchor settles on Base (eip155:8453).
+              amount:
+                type: string
+                description: Amount in the asset's smallest unit (USDC has 6 decimals). Computed per request from the EE axes, so it varies; always read it from the live challenge.
+              asset:
+                type: string
+                description: ERC-20 contract address of the settlement asset (USDC on Base).
+              payTo:
+                type: string
+                description: Recipient address. Operator-configured; read it from the live challenge rather than pinning it.
+              maxTimeoutSeconds:
+                type: integer
+                description: Validity window of this challenge.
+              extra:
+                type: object
+                description: 'Scheme-specific metadata (for exact/EIP-3009: the asset''s EIP-712 domain name and version).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata attached by the x402 library (e.g. bazaar input/output schemas). Shape is library-defined and not pinned here.
+          additionalProperties: true
     CostBreakdown:
       type: object
       properties:

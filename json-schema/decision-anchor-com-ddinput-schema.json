@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/decision-anchor-com/main/json-schema/decision-anchor-com-ddinput-schema.json",
+  "title": "DDInput",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/decision-anchor-com-bilateral-api-openapi.yml#/components/schemas/DDInput",
+  "type": "object",
+  "required": [
+    "dd_unit_type",
+    "dd_declaration_mode",
+    "decision_type",
+    "decision_action_type",
+    "origin_context_type",
+    "selection_state"
+  ],
+  "properties": {
+    "dd_unit_type": {
+      "type": "string",
+      "enum": [
+        "single",
+        "batch"
+      ],
+      "description": "How many decisions this record covers. single: one decision. batch: a set of decisions you declare as one unit."
+    },
+    "dd_declaration_mode": {
+      "type": "string",
+      "enum": [
+        "self_declared",
+        "bilateral",
+        "multi_party"
+      ],
+      "description": "Who declares. self_declared: you alone (the only value POST /v1/dd/create accepts). bilateral: you and one counterparty, created through POST /v1/dd/bilateral/propose. multi_party: reserved; not accepted on either route."
+    },
+    "decision_type": {
+      "type": "string",
+      "enum": [
+        "internal_service",
+        "external_interaction",
+        "self_attestation"
+      ],
+      "description": "What the decision concerns. internal_service: an operation inside your own platform or service. external_interaction: an exchange with a party or system outside it (a payment, a delegation, an agreement). self_attestation: a statement about your own state or intent rather than an action on anything else. DA records the value you send and does not check it."
+    },
+    "decision_action_type": {
+      "type": "string",
+      "enum": [
+        "execute",
+        "hold",
+        "reject",
+        "depend",
+        "approve"
+      ],
+      "description": "What the decision did: execute (carried out), hold (kept pending), reject (declined), depend (deferred to another decision or party), approve (authorized something else to proceed)."
+    },
+    "origin_context_type": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "external",
+        "self",
+        "mixed"
+      ],
+      "description": "What set the decision in motion. internal: your platform or orchestrator. external: an outside party or event. self: your own initiative. mixed: more than one of these. DA records the value you send and does not check it."
+    },
+    "selection_state": {
+      "type": "string",
+      "enum": [
+        "SELECTED",
+        "REJECTED",
+        "ABORTED",
+        "SILENT",
+        "NON_DECISION"
+      ],
+      "description": "How the selection ended: SELECTED (a choice was made), REJECTED (the options were declined), ABORTED (the process stopped before a choice), SILENT (no response was given), NON_DECISION (the situation was left undecided on purpose). Every value is a valid declaration, including the ones where nothing was carried out."
+    },
+    "selection_scope": {
+      "type": "string",
+      "enum": [
+        "single_target",
+        "multi_target",
+        "chain_scope",
+        "global"
+      ],
+      "description": "Optional."
+    },
+    "decision_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Optional. The time the agent itself decided, as an ISO 8601 timestamp. The server normalizes it to UTC and stores the normalized value, which is also what enters integrity_hash; send it in any valid offset and read back the stored value with GET /v1/dd/{dd_id}. It must not be later than the anchoring time: a later value is rejected with 400 DECISION_AT_IN_FUTURE. Omit it and no decision time is recorded. The distance between decision_at and anchored_at is derived, never stored. When the time-alignment credit is enabled and that gap is within the configured window, Earned DAC is credited at confirm (confirm response sync_reward); current window, amount and whether it is enabled: GET /v1/pricing/current sync_reward."
+    },
+    "parent_dd_id": {
+      "type": "string",
+      "format": "uuid"
+    }
+  }
+}

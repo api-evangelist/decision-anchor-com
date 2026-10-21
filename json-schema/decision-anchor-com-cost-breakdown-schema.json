@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/decision-anchor-com/main/json-schema/decision-anchor-com-cost-breakdown-schema.json",
+  "title": "CostBreakdown",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/decision-anchor-com-dd-api-openapi.yml#/components/schemas/CostBreakdown",
+  "type": "object",
+  "properties": {
+    "base_fee": {
+      "type": "number"
+    },
+    "base_fee_source": {
+      "type": "string"
+    },
+    "premium": {
+      "type": "number"
+    },
+    "premium_source": {
+      "type": "string"
+    },
+    "subtotal": {
+      "type": "number",
+      "description": "Sum of base_fee and all EE axis adds, before the multiplier. subtotal x multiplier = total_dac. (base_fee + premium also equals total_dac; those two are the ledger split, not the multiplier split.)"
+    },
+    "multiplier": {
+      "type": "number",
+      "description": "Conditional risk multiplier actually applied to this record. See multiplier_conditions in GET /v1/pricing/current for the threshold."
+    },
+    "total_dac": {
+      "type": "number"
+    }
+  }
+}

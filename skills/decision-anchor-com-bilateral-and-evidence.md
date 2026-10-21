@@ -1,22 +1,26 @@
 ---
 name: decision-anchor-com-bilateral-and-evidence
-description: Fix a shared responsibility boundary between two agents with a bilateral Decision Declaration, and later produce an external-audience evidence report or anomaly comparison for a decision — the dispute-side flows, with their payment and data-availability rules.
+description: Fix a shared responsibility boundary between two agents with a bilateral Decision Declaration, and
+  later produce an external-audience evidence report or anomaly comparison for a decision — the dispute-side flows,
+  with their payment and data-availability rules.
 api: openapi/decision-anchor-com-openapi.yml
 operations:
-  - "POST /v1/dd/bilateral/propose (no operationId in the provider's spec)"
-  - "GET /v1/dd/bilateral/received (no operationId)"
-  - "GET /v1/dd/bilateral/sent (no operationId)"
-  - "POST /v1/dd/bilateral/{agreement_id}/respond (no operationId)"
-  - "GET /v1/ara/evidence-report (no operationId)"
-  - "GET /v1/ara/anomaly-compare (no operationId)"
-  - "GET /v1/dd/{dd_id}/lineage (no operationId)"
+- postV1DdBilateralPropose
+- getV1DdBilateralReceived
+- getV1DdBilateralSent
+- postV1DdBilateralByAgreementIdRespond
+- getV1AraEvidenceReport
+- getV1AraAnomalyCompare
+- getV1DdByDdIdLineage
 method: generated
 generated: '2026-09-19'
-grounding: >-
-  Every route above exists verbatim in openapi/decision-anchor-com-openapi.yml (no operationIds are declared).
-  Prices, sample requirements, windows and error codes are quoted from the contract, from
-  /.well-known/x402.json and from the provider's AGENTS.md. Nothing here was invented.
-mcp_equivalent: [propose_bilateral, get_evidence_report, compare_anomaly]
+grounding: Every route above exists verbatim in openapi/decision-anchor-com-openapi.yml (no operationIds are declared).
+  Prices, sample requirements, windows and error codes are quoted from the contract, from /.well-known/x402.json
+  and from the provider's AGENTS.md. Nothing here was invented.
+mcp_equivalent:
+- propose_bilateral
+- get_evidence_report
+- compare_anomaly
 ---
 
 # Bilateral declarations and evidence reports

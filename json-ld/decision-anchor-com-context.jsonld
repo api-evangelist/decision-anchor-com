@@ -1,0 +1,199 @@
+{
+  "@context": {
+    "@vocab": "https://decision-anchor.com/schema#",
+    "schema": "https://schema.org/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "decision": "https://decision-anchor.com/schema#",
+    "Error": "decision:Error",
+    "error_code": {
+      "@id": "decision:error_code",
+      "@type": "xsd:string"
+    },
+    "message": {
+      "@id": "decision:message",
+      "@type": "xsd:string"
+    },
+    "UnauthorizedBody": "decision:UnauthorizedBody",
+    "authentication": {
+      "@id": "decision:authentication"
+    },
+    "account": {
+      "@id": "decision:account"
+    },
+    "documentation": {
+      "@id": "decision:documentation",
+      "@type": "@id"
+    },
+    "X402Challenge": "decision:X402Challenge",
+    "x402Version": {
+      "@id": "decision:x402Version",
+      "@type": "xsd:integer"
+    },
+    "error": {
+      "@id": "decision:error",
+      "@type": "xsd:string"
+    },
+    "resource": {
+      "@id": "decision:resource"
+    },
+    "accepts": {
+      "@id": "decision:accepts",
+      "@container": "@list"
+    },
+    "extensions": {
+      "@id": "decision:extensions"
+    },
+    "EEInput": "decision:EEInput",
+    "ee_preset": {
+      "@id": "decision:ee_preset",
+      "@type": "xsd:string"
+    },
+    "ee_retention_period": {
+      "@id": "decision:ee_retention_period",
+      "@type": "xsd:string"
+    },
+    "ee_integrity_verification_level": {
+      "@id": "decision:ee_integrity_verification_level",
+      "@type": "xsd:string"
+    },
+    "ee_disclosure_format_policy": {
+      "@id": "decision:ee_disclosure_format_policy",
+      "@type": "xsd:string"
+    },
+    "ee_responsibility_scope": {
+      "@id": "decision:ee_responsibility_scope",
+      "@type": "xsd:string"
+    },
+    "ee_direct_access_period": {
+      "@id": "decision:ee_direct_access_period",
+      "@type": "xsd:string"
+    },
+    "ee_direct_access_quota": {
+      "@id": "decision:ee_direct_access_quota",
+      "@type": "xsd:integer"
+    },
+    "content_disclosure_scope": {
+      "@id": "decision:content_disclosure_scope",
+      "@type": "xsd:string"
+    },
+    "delegation_state": {
+      "@id": "decision:delegation_state",
+      "@type": "xsd:string"
+    },
+    "access_class": {
+      "@id": "decision:access_class",
+      "@type": "xsd:string"
+    },
+    "DDInput": "decision:DDInput",
+    "dd_unit_type": {
+      "@id": "decision:dd_unit_type",
+      "@type": "xsd:string"
+    },
+    "dd_declaration_mode": {
+      "@id": "decision:dd_declaration_mode",
+      "@type": "xsd:string"
+    },
+    "decision_type": {
+      "@id": "decision:decision_type",
+      "@type": "xsd:string"
+    },
+    "decision_action_type": {
+      "@id": "decision:decision_action_type",
+      "@type": "xsd:string"
+    },
+    "origin_context_type": {
+      "@id": "decision:origin_context_type",
+      "@type": "xsd:string"
+    },
+    "selection_state": {
+      "@id": "decision:selection_state",
+      "@type": "xsd:string"
+    },
+    "selection_scope": {
+      "@id": "decision:selection_scope",
+      "@type": "xsd:string"
+    },
+    "decision_at": {
+      "@id": "decision:decision_at",
+      "@type": "xsd:dateTime"
+    },
+    "parent_dd_id": {
+      "@id": "decision:parent_dd_id",
+      "@type": "xsd:string"
+    },
+    "TemplateInput": "decision:TemplateInput",
+    "decision_class": {
+      "@id": "decision:decision_class",
+      "@type": "xsd:string"
+    },
+    "decision_scale_value": {
+      "@id": "decision:decision_scale_value",
+      "@type": "xsd:decimal"
+    },
+    "target_class": {
+      "@id": "decision:target_class",
+      "@type": "xsd:string"
+    },
+    "call_chain": {
+      "@id": "decision:call_chain",
+      "@container": "@list"
+    },
+    "decision_scale_unit": {
+      "@id": "decision:decision_scale_unit",
+      "@type": "xsd:string"
+    },
+    "self_classification": {
+      "@id": "decision:self_classification",
+      "@type": "xsd:string"
+    },
+    "decision_trigger": {
+      "@id": "decision:decision_trigger",
+      "@type": "xsd:string"
+    },
+    "human_involvement": {
+      "@id": "decision:human_involvement",
+      "@type": "xsd:string"
+    },
+    "CostBreakdown": "decision:CostBreakdown",
+    "base_fee": {
+      "@id": "decision:base_fee",
+      "@type": "xsd:decimal"
+    },
+    "base_fee_source": {
+      "@id": "decision:base_fee_source",
+      "@type": "xsd:string"
+    },
+    "premium": {
+      "@id": "decision:premium",
+      "@type": "xsd:decimal"
+    },
+    "premium_source": {
+      "@id": "decision:premium_source",
+      "@type": "xsd:string"
+    },
+    "subtotal": {
+      "@id": "decision:subtotal",
+      "@type": "xsd:decimal"
+    },
+    "multiplier": {
+      "@id": "decision:multiplier",
+      "@type": "xsd:decimal"
+    },
+    "total_dac": {
+      "@id": "decision:total_dac",
+      "@type": "xsd:decimal"
+    }
+  },
+  "@type": "schema:Dataset",
+  "schema:name": "Decision Anchor API JSON-LD context",
+  "schema:description": "A JSON-LD @context for the objects Decision Anchor's own API contract declares: one class per component schema, one property per declared field, typed from the contract. Derived by script (derive-json-ld.py, 2026-10-20) from openapi/decision-anchor-com-agent-api-openapi.yml, openapi/decision-anchor-com-ara-api-openapi.yml, openapi/decision-anchor-com-asa-api-openapi.yml.",
+  "dcterms:created": "2026-10-20",
+  "dcterms:source": [
+    "openapi/decision-anchor-com-agent-api-openapi.yml",
+    "openapi/decision-anchor-com-ara-api-openapi.yml",
+    "openapi/decision-anchor-com-asa-api-openapi.yml",
+    "openapi/decision-anchor-com-bilateral-api-openapi.yml",
+    "openapi/decision-anchor-com-classification-api-openapi.yml"
+  ]
+}

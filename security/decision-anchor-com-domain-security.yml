@@ -1,19 +1,18 @@
-generated: '2026-09-19'
+generated: '2026-10-20'
 method: probed
 source: live DNS/TLS/HTTP probes of apis.yml + OpenAPI hosts
 hosts:
 - host: decision-anchor.com
   https: true
   tls_version: TLSv1.3
-  cert_expires: Nov  7 10:11:36 2026 GMT
+  cert_expires: Jan  5 10:37:14 2027 GMT
   hsts: false
-- host: api.decision-anchor.com
+- host: mcp.decision-anchor.com
   https: true
   tls_version: TLSv1.3
   cert_expires: Dec 16 21:16:48 2026 GMT
-  hsts: true
-  hsts_max_age: 31536000
-- host: mcp.decision-anchor.com
+  hsts: false
+- host: a2a.decision-anchor.com
   https: true
   tls_version: TLSv1.3
   cert_expires: Dec 16 21:16:48 2026 GMT

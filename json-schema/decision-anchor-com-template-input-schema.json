@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/decision-anchor-com/main/json-schema/decision-anchor-com-template-input-schema.json",
+  "title": "TemplateInput",
+  "description": "Content Inclusion branch 1: 7-dimension decision metadata. Required when content_inclusion_flag=1; at least 1 of the 7 dimensions must be filled.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/decision-anchor-com-dd-api-openapi.yml#/components/schemas/TemplateInput",
+  "type": "object",
+  "minProperties": 1,
+  "properties": {
+    "decision_class": {
+      "type": "string",
+      "enum": [
+        "payment",
+        "api_call",
+        "data_access",
+        "delegation",
+        "resource_transfer",
+        "communication",
+        "other"
+      ]
+    },
+    "decision_scale_value": {
+      "type": "number"
+    },
+    "target_class": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "external",
+        "third_party",
+        "subagent",
+        "human_owner",
+        "public",
+        "system"
+      ]
+    },
+    "call_chain": {
+      "type": "array",
+      "maxItems": 32,
+      "description": "Tool identifier tokens only (no spaces, no free text). Entries containing personal identifying information are rejected.",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$"
+      }
+    },
+    "decision_scale_unit": {
+      "type": "string",
+      "maxLength": 20,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_./%-]{0,19}$",
+      "description": "Short unit code for decision_scale_value (e.g. \"USDC\", \"USD\"). No spaces, no free text."
+    },
+    "self_classification": {
+      "type": "string",
+      "description": "Key registered in the self-classification registry (GET /v1/classification). Unregistered keys are rejected."
+    },
+    "decision_trigger": {
+      "type": "string",
+      "enum": [
+        "user_request",
+        "scheduled",
+        "event_driven",
+        "autonomous",
+        "delegated",
+        "external_event"
+      ]
+    },
+    "human_involvement": {
+      "type": "string",
+      "enum": [
+        "none",
+        "notification",
+        "approval",
+        "co_decision",
+        "review"
+      ]
+    }
+  }
+}
