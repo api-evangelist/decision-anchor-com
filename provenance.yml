@@ -15,6 +15,9 @@ artifacts:
   authentication/decision-anchor-com-authentication.yml:
     method: derived
     evidence: declared in the artifact
+  capabilities/decision-anchor-com-capability-edges.yml:
+    method: unknown
+    evidence: no authorship recorded
   changelog/decision-anchor-com-changelog.yml:
     method: searched
     evidence: declared in the artifact
@@ -33,7 +36,31 @@ artifacts:
   front-door-ai/2026-09-17.yml:
     method: unknown
     evidence: no authorship recorded
-  kin/checks-2026-09-24T161608.yml:
+  hosts/decision-anchor-com-hosts.yml:
+    method: derived
+    evidence: declared in the artifact
+  integrations/_index.yml:
+    method: generated
+    evidence: carries an API Evangelist house phrase
+  integrations/decision-anchor-com-integration-edges.yml:
+    method: searched
+    evidence: declared in the artifact
+  json-ld/decision-anchor-com-context.jsonld:
+    method: unknown
+    evidence: no authorship recorded
+  json-schema/decision-anchor-com-cost-breakdown-schema.json:
+    method: unknown
+    evidence: no authorship recorded
+  json-schema/decision-anchor-com-ddinput-schema.json:
+    method: unknown
+    evidence: no authorship recorded
+  json-schema/decision-anchor-com-eeinput-schema.json:
+    method: unknown
+    evidence: no authorship recorded
+  json-schema/decision-anchor-com-template-input-schema.json:
+    method: unknown
+    evidence: no authorship recorded
+  kin/checks-2026-10-11T110117.yml:
     method: generated
     evidence: Kin Score snapshot written by score.rb
   kin/score-2026-09-19T193153.yml:
@@ -66,9 +93,27 @@ artifacts:
   kin/score-2026-09-24T161608.yml:
     method: generated
     evidence: Kin Score snapshot written by score.rb
+  kin/score-2026-09-25T210408.yml:
+    method: generated
+    evidence: Kin Score snapshot written by score.rb
+  kin/score-2026-09-25T232841.yml:
+    method: generated
+    evidence: Kin Score snapshot written by score.rb
+  kin/score-2026-10-03T000835.yml:
+    method: generated
+    evidence: Kin Score snapshot written by score.rb
+  kin/score-2026-10-03T024842.yml:
+    method: generated
+    evidence: Kin Score snapshot written by score.rb
+  kin/score-2026-10-11T110117.yml:
+    method: generated
+    evidence: Kin Score snapshot written by score.rb
   lifecycle/decision-anchor-com-lifecycle.yml:
     method: searched
     evidence: declared in the artifact
+  llms/decision-anchor-com-llms-provenance.yml:
+    method: searched
+    evidence: 'derive-llms-provenance.py: harvested'
   llms/decision-anchor-com-llms.txt:
     method: searched
     evidence: 'derive-llms-provenance.py: harvested'
@@ -83,14 +128,93 @@ artifacts:
     evidence: declared in the artifact
   openapi/_original/decision-anchor-com-openapi.json:
     method: harvested
-    evidence: found in openapi/_original/; the fetch URL and bytes were not recorded, so byte-identity
-      to the provider's source is unverified
-  openapi/decision-anchor-com-openapi.yml:
+    evidence: byte-identical to https://api.decision-anchor.com/openapi.json (sha256 4aadac1d2cec, fetched
+      2026-10-04)
+  openapi/_original/decision-anchor-com-openapi.yml:
+    method: harvested
+    evidence: the same operations as https://api.decision-anchor.com/openapi.json (sha256 4aadac1d2cec,
+      fetched 2026-10-04)
+  openapi/decision-anchor-com-agent-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-ara-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-asa-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-bilateral-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-classification-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-dab-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-dap-account-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-dap-agent-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-dap-asa-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-dap-auth-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-dap-dab-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-dap-dashboard-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-dap-dur-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-dap-policy-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-dap-trial-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-dap-tsl-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-dd-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-dur-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-earned-dac-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-ise-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-payment-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-pricing-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-retention-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-sdac-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-trial-api-openapi.yml:
+    method: derived
+    evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
+  openapi/decision-anchor-com-tsl-api-openapi.yml:
     method: derived
     evidence: paths are a subset of openapi/_original/ (split from the harvested spec)
   overlays/decision-anchor-com-openapi-overlay.yaml:
-    method: generated
-    evidence: declared in the artifact
+    method: derived
+    evidence: an API Evangelist overlay (title) over the provider's contract
   packages/decision-anchor-com-packages.yml:
     method: searched
     evidence: declared in the artifact
@@ -102,6 +226,9 @@ artifacts:
     evidence: no authorship recorded
   regulatory/decision-anchor-com-regulatory-posture.yml:
     method: searched
+    evidence: declared in the artifact
+  rules/decision-anchor-com-rules.yml:
+    method: generated
     evidence: declared in the artifact
   sandbox/decision-anchor-com-sandbox.yml:
     method: searched
@@ -116,13 +243,19 @@ artifacts:
     method: searched
     evidence: declared in the artifact
   skills/decision-anchor-com-agents-md.md:
-    method: unknown
-    evidence: no authorship recorded
+    method: searched
+    evidence: declared in the artifact
   skills/decision-anchor-com-anchor-a-decision.md:
     method: generated
     evidence: declared in the artifact
   skills/decision-anchor-com-bilateral-and-evidence.md:
     method: generated
+    evidence: declared in the artifact
+  vendors/decision-anchor-com-vendors.yml:
+    method: unknown
+    evidence: no authorship recorded
+  vocabulary/decision-anchor-com-vocabulary.yml:
+    method: derived
     evidence: declared in the artifact
   well-known/decision-anchor-com-a2a-host-mcp.json:
     method: unknown

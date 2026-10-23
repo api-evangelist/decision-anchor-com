@@ -322,3 +322,9 @@ components:
 externalDocs:
   description: 'Decision Anchor positioning & semantics for AI agents: why DA exists, Content-blind Accountability, Self-testimony Resolution, and when to use each mechanism. Read llms.txt for meaning and when-to-use, not just the endpoint contract.'
   url: https://api.decision-anchor.com/llms.txt
+x-provenance:
+  method: harvested
+  publisher: Decision Anchor
+  source: https://api.decision-anchor.com/openapi.json
+  note: split by refine-openapis from the provider's own published document, verified by fetch (openapi/_original/*.fetch.json);
+    stamped by stamp-openapi-provenance.py (roadmap#793)
